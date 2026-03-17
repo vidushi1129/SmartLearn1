@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartLearn – AI Career Guidance Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="particle-canvas"></canvas>
+
+<div class="toast" id="toast"><span id="toast-icon">✨</span><span id="toast-msg"></span></div>
+
+<div class="loading-overlay" id="loading" style="display:none">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Analysing your profile…</div>
+  <div class="loading-steps">
+    <div class="loading-step" id="ls1"><span class="loading-step-dot"></span>Scanning academic background…</div>
+    <div class="loading-step" id="ls2"><span class="loading-step-dot"></span>Matching skills to NSQF levels…</div>
+    <div class="loading-step" id="ls3"><span class="loading-step-dot"></span>Fetching live market demand…</div>
+    <div class="loading-step" id="ls4"><span class="loading-step-dot"></span>Generating your career roadmap…</div>
+    <div class="loading-step" id="ls5"><span class="loading-step-dot"></span>Curating training programs…</div>
+  </div>
+</div>
+
+<!-- ══ LANDING ══ -->
+<div class="screen active" id="screen-landing">
+  <div class="top-bar">
+    <div class="logo">SmartLearn</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="nsqf-badge">🇮🇳 NSQF Aligned</div>
+      <div class="theme-toggle" onclick="toggleTheme()"></div>
+    </div>
+  </div>
+  <div class="landing-hero">
+    <div class="brand-badge"><span class="pulse-dot"></span>AI-Powered Career Intelligence</div>
+    <h1 class="hero-title" id="hero-title"></h1>
+    <p class="hero-sub">AI-driven career guidance aligned with India's National Skills Qualification Framework. Discover your perfect path, close skill gaps, and access the right training.</p>
+    <div class="cta-row">
+      <button class="btn-primary" onclick="showScreen('auth')">Get Started Free</button>
+      <button class="btn-ghost" onclick="demoLogin()">Try Demo ↗</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-num" id="stat1">0</div><div class="stat-label">Learners Guided</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat2">0</div><div class="stat-label">Career Paths</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat3">0</div><div class="stat-label">Match Accuracy</div></div>
+      <div class="stat-item"><div class="stat-num" style="color:var(--gold)">NSQF</div><div class="stat-label">Framework Aligned</div></div>
+    </div>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card tilt-card"><div class="feature-icon">🎯</div><div class="feature-title">AI Personalisation</div><div class="feature-desc">Tailored career pathways built from your unique background, skills and aspirations.</div></div>
+    <div class="feature-card tilt-card"><div class="feature-icon">📊</div><div class="feature-title">Market Insights</div><div class="feature-desc">Live job demand, salary trends, and location-based opportunities across India.</div></div>
+    <div class="feature-card tilt-card"><div class="feature-icon">🗺️</div><div class="feature-title">Skill Roadmaps</div><div class="feature-desc">Step-by-step NSQF-aligned learning roadmaps from where you are to your goal.</div></div>
+    <div class="feature-card tilt-card"><div class="feature-icon">📚</div><div class="feature-title">Curated Training</div><div class="feature-desc">Hand-picked courses and apprenticeships matched to your exact skill gaps.</div></div>
+  </div>
+  <div class="footer-bar">Aligned with National Council for Vocational Education and Training (NCVET) · Government of India</div>
+</div>
+
+<!-- ══ AUTH ══ -->
+<div class="screen" id="screen-auth">
+  <div class="top-bar">
+    <button class="btn-ghost small" onclick="showScreen('landing')">← Back</button>
+    <div class="theme-toggle" onclick="toggleTheme()"></div>
+  </div>
+  <div class="center-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">PathForge ✦</div>
+      <div class="tab-row">
+        <div class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</div>
+        <div class="tab-btn" id="tab-register" onclick="switchTab('register')">Register</div>
+      </div>
+      <div id="login-form">
+        <div class="auth-title">Welcome back</div>
+        <div class="auth-sub">Sign in to continue your career journey</div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="login-email" placeholder="you@example.com" value="priya@example.com"></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="login-pwd" placeholder="••••••••" value="password"></div>
+        <button class="btn-primary full-width" onclick="handleLogin()">Sign In →</button>
+        <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:14px;">Demo: priya@example.com / password</p>
+      </div>
+      <div id="register-form" style="display:none">
+        <div class="auth-title">Create account</div>
+        <div class="auth-sub">Join millions building their career with AI</div>
+        <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" id="reg-name" placeholder="Priya Sharma"></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="reg-email" placeholder="you@example.com"></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="reg-pwd" placeholder="Create a strong password"></div>
+        <button class="btn-primary full-width" onclick="handleRegister()">Create Account →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ONBOARDING ══ -->
+<div class="screen" id="screen-onboarding">
+  <div class="top-bar">
+    <div class="logo">PathForge</div>
+    <div class="ai-badge"><span class="ai-dot"></span>AI Profile Builder</div>
+  </div>
+  <div class="center-wrap top-align">
+    <div class="onboarding-wrap">
+      <div class="step-progress" id="step-progress"></div>
+
+      <div class="card" id="step-1">
+        <div class="section-tag">Step 1 of 5</div>
+        <div class="card-title">Academic Background</div>
+        <div class="card-sub">Tell us about your educational foundation</div>
+        <div class="form-group"><label class="form-label">Highest Qualification</label>
+          <select class="form-input" id="qualification">
+            <option value="10th">Class 10</option><option value="12th">Class 12</option>
+            <option value="diploma">Diploma / ITI</option><option value="ug" selected>Bachelor's Degree</option>
+            <option value="pg">Master's Degree</option><option value="phd">PhD / Doctorate</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Field of Study</label>
+          <select class="form-input" id="field">
+            <option value="cs" selected>Computer Science / IT</option><option value="engg">Engineering</option>
+            <option value="commerce">Commerce / Business</option><option value="science">Pure Sciences</option>
+            <option value="arts">Arts / Humanities</option><option value="medical">Medical</option>
+            <option value="law">Law</option><option value="other">Other</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Year of Completion</label>
+          <select class="form-input" id="grad-year">
+            <option value="2024" selected>2024</option><option value="2023">2023</option>
+            <option value="2022">2022</option><option value="2021">2021</option><option value="older">Before 2021</option>
+          </select></div>
+        <div class="nav-row"><button class="btn-primary" onclick="nextStep(2)">Next →</button></div>
+      </div>
+
+      <div class="card" id="step-2" style="display:none">
+        <div class="section-tag">Step 2 of 5</div>
+        <div class="card-title">Your Skills</div>
+        <div class="card-sub">Rate your proficiency (0 = Beginner · 100 = Expert)</div>
+        <div class="skill-row">
+          <div class="skill-item"><label>Programming <span id="s-prog-val">60</span>%</label><input type="range" min="0" max="100" value="60" oninput="document.getElementById('s-prog-val').textContent=this.value" id="s-prog"></div>
+          <div class="skill-item"><label>Data Analysis <span id="s-data-val">40</span>%</label><input type="range" min="0" max="100" value="40" oninput="document.getElementById('s-data-val').textContent=this.value" id="s-data"></div>
+          <div class="skill-item"><label>Communication <span id="s-comm-val">75</span>%</label><input type="range" min="0" max="100" value="75" oninput="document.getElementById('s-comm-val').textContent=this.value" id="s-comm"></div>
+          <div class="skill-item"><label>Problem Solving <span id="s-prob-val">70</span>%</label><input type="range" min="0" max="100" value="70" oninput="document.getElementById('s-prob-val').textContent=this.value" id="s-prob"></div>
+          <div class="skill-item"><label>Technical Writing <span id="s-tech-val">45</span>%</label><input type="range" min="0" max="100" value="45" oninput="document.getElementById('s-tech-val').textContent=this.value" id="s-tech"></div>
+        </div>
+        <div style="margin-top:20px"><label class="form-label">Tools & Technologies you know</label>
+          <div class="chip-grid" id="tools-chips">
+            <div class="chip selected" data-val="Excel">Excel</div><div class="chip selected" data-val="Statistics">Statistics</div>
+            <div class="chip" data-val="Python">Python</div><div class="chip" data-val="SQL">SQL</div>
+            <div class="chip" data-val="Power BI">Power BI</div><div class="chip" data-val="Tableau">Tableau</div>
+            <div class="chip" data-val="Java">Java</div><div class="chip" data-val="React">React</div>
+            <div class="chip" data-val="Cloud">Cloud</div><div class="chip" data-val="ML">Machine Learning</div>
+          </div></div>
+        <div class="nav-row"><button class="btn-ghost" onclick="nextStep(1)">← Back</button><button class="btn-primary" onclick="nextStep(3)">Next →</button></div>
+      </div>
+
+      <div class="card" id="step-3" style="display:none">
+        <div class="section-tag">Step 3 of 5</div>
+        <div class="card-title">Your Interests</div>
+        <div class="card-sub">Select all domains that excite you</div>
+        <div class="chip-grid" id="interest-chips">
+          <div class="chip selected" data-val="Technology">🖥️ Technology</div><div class="chip selected" data-val="Data Science">📊 Data Science</div>
+          <div class="chip" data-val="Business">💼 Business</div><div class="chip" data-val="Design">🎨 Design</div>
+          <div class="chip" data-val="Healthcare">🏥 Healthcare</div><div class="chip" data-val="Finance">💰 Finance</div>
+          <div class="chip" data-val="Education">📚 Education</div><div class="chip" data-val="Government">🏛️ Government</div>
+          <div class="chip" data-val="Entrepreneurship">🚀 Entrepreneurship</div><div class="chip" data-val="Manufacturing">🏭 Manufacturing</div>
+        </div>
+        <div class="nav-row"><button class="btn-ghost" onclick="nextStep(2)">← Back</button><button class="btn-primary" onclick="nextStep(4)">Next →</button></div>
+      </div>
+
+      <div class="card" id="step-4" style="display:none">
+        <div class="section-tag">Step 4 of 5</div>
+        <div class="card-title">Career Goals</div>
+        <div class="card-sub">What kind of career are you aiming for?</div>
+        <div class="chip-grid" id="goal-chips">
+          <div class="chip selected" data-val="IT Jobs">💻 IT & Software</div>
+          <div class="chip" data-val="Government Jobs">🏛️ Government / PSU</div>
+          <div class="chip" data-val="Entrepreneurship">🚀 Entrepreneurship</div>
+          <div class="chip" data-val="Data & Analytics">📊 Data & Analytics</div>
+          <div class="chip" data-val="Finance">💹 Finance & Banking</div>
+          <div class="chip" data-val="Healthcare">🏥 Healthcare</div>
+          <div class="chip" data-val="Research">🔬 Research</div>
+          <div class="chip" data-val="Freelance">🌐 Freelancing</div>
+        </div>
+        <div class="form-group" style="margin-top:20px"><label class="form-label">Target Timeline</label>
+          <select class="form-input" id="timeline">
+            <option value="6m" selected>Within 6 months</option><option value="1y">Within 1 year</option>
+            <option value="2y">1–2 years</option><option value="3y+">3+ years</option>
+          </select></div>
+        <div class="nav-row"><button class="btn-ghost" onclick="nextStep(3)">← Back</button><button class="btn-primary" onclick="nextStep(5)">Next →</button></div>
+      </div>
+
+      <div class="card" id="step-5" style="display:none">
+        <div class="section-tag">Step 5 of 5</div>
+        <div class="card-title">Learning Preferences</div>
+        <div class="card-sub">How do you learn best?</div>
+        <div class="chip-grid" id="learn-chips">
+          <div class="chip selected" data-val="Online Learning">🌐 Online Learning</div>
+          <div class="chip" data-val="Hands-on Training">🔧 Hands-on</div>
+          <div class="chip" data-val="Classroom">🏫 Classroom</div>
+          <div class="chip" data-val="Self-paced">⏱️ Self-paced</div>
+          <div class="chip" data-val="Mentorship">👥 Mentorship</div>
+          <div class="chip" data-val="Bootcamp">⚡ Bootcamp</div>
+          <div class="chip" data-val="Apprenticeship">🏗️ Apprenticeship</div>
+          <div class="chip" data-val="Video Courses">📹 Video Courses</div>
+        </div>
+        <div class="form-group" style="margin-top:20px"><label class="form-label">Weekly Learning Hours</label>
+          <select class="form-input" id="hours">
+            <option value="5">Less than 5 hrs</option><option value="10" selected>5–10 hrs</option>
+            <option value="20">10–20 hrs</option><option value="40">Full-time (20+)</option>
+          </select></div>
+        <div class="nav-row"><button class="btn-ghost" onclick="nextStep(4)">← Back</button><button class="btn-primary" onclick="submitProfile()">Generate My Career Path ✨</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="screen" id="screen-dashboard">
+  <div class="dash-layout">
+    <div class="sidebar">
+      <div class="sidebar-head">
+        <div class="logo">PathForge ✦</div>
+        <div class="theme-toggle" onclick="toggleTheme()"></div>
+      </div>
+      <div class="nav-item active" onclick="switchPage('overview',this)"><span>🏠</span> Overview</div>
+      <div class="nav-item" onclick="switchPage('careers',this)"><span>🎯</span> Career Matches</div>
+      <div class="nav-item" onclick="switchPage('skills',this)"><span>⚡</span> Skill Analysis</div>
+      <div class="nav-item" onclick="switchPage('roadmap',this)"><span>🗺️</span> Roadmap</div>
+      <div class="nav-item" onclick="switchPage('courses',this)"><span>📚</span> Training</div>
+      <div class="nav-item" onclick="switchPage('market',this)"><span>📊</span> Market Trends</div>
+      <div class="nav-item" onclick="switchPage('salary',this)"><span>💰</span> Salary Calculator</div>
+      <div class="nav-item" onclick="switchPage('profile',this)"><span>👤</span> My Profile</div>
+      <div class="sidebar-bottom">
+        <div class="nsqf-badge" style="margin-bottom:12px;display:block;text-align:center;">NSQF Aligned ✓</div>
+        <div class="user-chip" onclick="handleLogout()">
+          <div class="user-avatar" id="sidebar-avatar">P</div>
+          <div><div class="user-name" id="sidebar-name">Priya Sharma</div><div class="user-sub">Sign out</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+
+      <!-- OVERVIEW -->
+      <div class="page active" id="page-overview">
+        <div class="page-header">
+          <div><div class="page-title" id="welcome-title">Welcome back 👋</div><div class="page-sub">Your personalised career intelligence dashboard</div></div>
+          <div class="ai-badge"><span class="ai-dot"></span>AI Analysis Active</div>
+        </div>
+        <div class="streak-bar">
+          <div class="streak-flame">🔥</div>
+          <div class="streak-info"><div class="streak-count" id="streak-count">5 Day Streak!</div><div class="streak-label">Keep learning every day</div></div>
+          <div class="streak-dots" id="streak-dots"></div>
+        </div>
+        <div class="tip-card">
+          <div class="tip-icon">💡</div>
+          <div><div class="tip-label">Daily Career Tip</div><div class="tip-text" id="daily-tip">Loading…</div></div>
+        </div>
+        <div class="whats-new-card">
+          <div class="whats-new-title">📰 What's Changed in the Market</div>
+          <div id="whats-new-list"></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-card"><div class="metric-label">Top Match</div><div class="metric-val gold">85%</div><div class="metric-sub">Data Analyst</div></div>
+          <div class="metric-card"><div class="metric-label">Skills Ready</div><div class="metric-val green">2 / 7</div><div class="metric-sub">5 more needed</div></div>
+          <div class="metric-card"><div class="metric-label">Career Matches</div><div class="metric-val accent">8</div><div class="metric-sub">Personalised picks</div></div>
+          <div class="metric-card"><div class="metric-label">NSQF Level</div><div class="metric-val accent2">4.5</div><div class="metric-sub">Target: Level 6</div></div>
+        </div>
+        <div class="section-heading">🎯 Top Career Recommendations</div>
+        <div class="careers-grid" id="top-careers"></div>
+        <div class="two-col">
+          <div class="roadmap-wrap"><div class="roadmap-title">📍 Journey Quick View</div><div id="mini-roadmap"></div></div>
+          <div class="chart-card"><div class="chart-title">📈 Skill Readiness</div><div class="chart-wrap"><canvas id="radar-chart"></canvas></div></div>
+        </div>
+      </div>
+
+      <!-- CAREERS -->
+      <div class="page" id="page-careers">
+        <div class="page-header"><div><div class="page-title">Career Matches</div><div class="page-sub">AI-curated · Click + Compare to compare two careers</div></div></div>
+        <div class="compare-panel" id="compare-panel">
+          <div class="compare-header">⚖️ Career Comparison <button onclick="clearCompare()" class="clear-btn">Clear</button></div>
+          <div class="compare-grid" id="compare-grid"></div>
+        </div>
+        <div class="careers-grid" id="all-careers"></div>
+      </div>
+
+      <!-- SKILLS -->
+      <div class="page" id="page-skills">
+        <div class="page-header"><div><div class="page-title">Skill Analysis</div><div class="page-sub">Click skills to mark as learning or completed</div></div></div>
+        <div class="chart-card">
+          <div class="skills-header">
+            <div class="skills-target">Target: Data Analyst</div>
+            <div class="match-live" id="match-score-live">Match: 85%</div>
+          </div>
+          <div class="chart-wrap"><canvas id="skills-bar-chart"></canvas></div>
+        </div>
+        <div class="skills-wrap">
+          <div class="skills-box"><div class="skills-box-title">✅ Skills You Have</div><div id="skills-have"></div></div>
+          <div class="skills-box"><div class="skills-box-title">🎯 Skills You Need</div><div id="skills-need"></div></div>
+        </div>
+      </div>
+
+      <!-- ROADMAP -->
+      <div class="page" id="page-roadmap">
+        <div class="page-header"><div><div class="page-title">Career Roadmap</div><div class="page-sub">NSQF-aligned step-by-step path to your goal</div></div></div>
+        <div class="roadmap-wrap"><div class="roadmap-title">🗺️ Data Analyst Pathway</div><div id="full-roadmap"></div></div>
+      </div>
+
+      <!-- COURSES -->
+      <div class="page" id="page-courses">
+        <div class="page-header"><div><div class="page-title">Recommended Training</div><div class="page-sub">NSQF-certified programs for your skill gaps</div></div></div>
+        <div class="courses-grid" id="courses-grid"></div>
+      </div>
+
+      <!-- MARKET -->
+      <div class="page" id="page-market">
+        <div class="page-header"><div><div class="page-title">Market Trends</div><div class="page-sub">Job demand & salary insights for your career path</div></div></div>
+        <div class="chart-card"><div class="chart-title">📊 Job Demand — Top Roles (India 2025)</div><div class="chart-wrap"><canvas id="demand-chart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">💰 Salary Ranges ₹ LPA — Data & Tech Roles</div><div class="chart-wrap"><canvas id="salary-chart"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">📍 City-wise Job Demand Heatmap</div><div class="heatmap-grid" id="heatmap-grid"></div></div>
+        <div class="market-insights" id="market-insights"></div>
+      </div>
+
+      <!-- SALARY CALC -->
+      <div class="page" id="page-salary">
+        <div class="page-header"><div><div class="page-title">Salary Calculator</div><div class="page-sub">Estimate your salary based on role, city and experience</div></div></div>
+        <div class="salary-calc">
+          <div class="calc-grid">
+            <div class="form-group"><label class="form-label">Role</label>
+              <select class="form-input" id="calc-role" onchange="calcSalary()">
+                <option value="da">Data Analyst</option><option value="bi">BI Analyst</option>
+                <option value="ds">Data Scientist</option><option value="ml">ML Engineer</option>
+                <option value="de">Data Engineer</option><option value="ca">Cloud Architect</option>
+              </select></div>
+            <div class="form-group"><label class="form-label">City</label>
+              <select class="form-input" id="calc-city" onchange="calcSalary()">
+                <option value="bangalore">Bengaluru</option><option value="hyderabad">Hyderabad</option>
+                <option value="mumbai">Mumbai</option><option value="delhi">Delhi NCR</option>
+                <option value="pune">Pune</option><option value="chennai">Chennai</option>
+                <option value="tier2">Tier-2 City</option>
+              </select></div>
+            <div class="form-group"><label class="form-label">Experience</label>
+              <select class="form-input" id="calc-exp" onchange="calcSalary()">
+                <option value="0">Fresher (0–1 yr)</option><option value="2">2–3 years</option>
+                <option value="4">4–6 years</option><option value="7">7+ years</option>
+              </select></div>
+          </div>
+          <div class="calc-result">
+            <div class="calc-label">Estimated Annual Salary</div>
+            <div class="salary-result" id="salary-result">₹5.5 – 8 LPA</div>
+            <div class="calc-note" id="salary-note">Based on current market data for Bengaluru.</div>
+          </div>
+          <div class="breakdown-grid" id="salary-breakdown"></div>
+        </div>
+        <div class="chart-card"><div class="chart-title">📈 Salary Growth Projection (5 Years)</div><div class="chart-wrap"><canvas id="growth-chart"></canvas></div></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="page" id="page-profile">
+        <div class="page-header">
+          <div><div class="page-title">My Profile</div><div class="page-sub">Your career intelligence snapshot</div></div>
+          <button class="btn-ghost small" onclick="handleLogout()">Sign Out</button>
+        </div>
+        <div class="profile-hero">
+          <div class="profile-big-avatar" id="profile-avatar">P</div>
+          <div><div class="profile-name" id="profile-name">Priya Sharma</div><div class="profile-email" id="profile-email">priya@example.com</div></div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-title">Profile Completion</div>
+          <div class="profile-completion">
+            <div class="completion-ring">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle class="ring-bg" cx="40" cy="40" r="34"/>
+                <circle class="ring-fg" cx="40" cy="40" r="34" id="comp-ring" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+              </svg>
+              <div class="comp-pct" id="comp-pct">0%</div>
+            </div>
+            <div>
+              <div class="comp-label-text">Profile is <span id="comp-label">loading…</span></div>
+              <div style="font-size:13px;color:var(--muted)">Complete more sections to improve match accuracy</div>
+            </div>
+          </div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-title">Academic Background</div>
+          <div class="profile-grid">
+            <div class="profile-row"><div class="profile-row-label">Qualification</div><div class="profile-row-val" id="p-qual">—</div></div>
+            <div class="profile-row"><div class="profile-row-label">Field</div><div class="profile-row-val" id="p-field">—</div></div>
+            <div class="profile-row"><div class="profile-row-label">Year</div><div class="profile-row-val" id="p-year">—</div></div>
+          </div>
+        </div>
+        <div class="profile-section">
+          <div class="profile-section-title">Career Goals & Preferences</div>
+          <div class="profile-grid">
+            <div class="profile-row"><div class="profile-row-label">Primary Goal</div><div class="profile-row-val" id="p-goal">—</div></div>
+            <div class="profile-row"><div class="profile-row-label">Timeline</div><div class="profile-row-val" id="p-timeline">—</div></div>
+            <div class="profile-row"><div class="profile-row-label">Learning Mode</div><div class="profile-row-val" id="p-learn">—</div></div>
+            <div class="profile-row"><div class="profile-row-label">Weekly Hours</div><div class="profile-row-val" id="p-hours">—</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main-content -->
+  </div><!-- /dash-layout -->
+
+  <div class="mob-nav">
+    <div class="mob-nav-btn active" onclick="switchPage('overview',null);updateMobNav(0)">🏠<span>Home</span></div>
+    <div class="mob-nav-btn" onclick="switchPage('careers',null);updateMobNav(1)">🎯<span>Careers</span></div>
+    <div class="mob-nav-btn" onclick="switchPage('roadmap',null);updateMobNav(2)">🗺️<span>Roadmap</span></div>
+    <div class="mob-nav-btn" onclick="switchPage('market',null);updateMobNav(3)">📊<span>Market</span></div>
+    <div class="mob-nav-btn" onclick="switchPage('profile',null);updateMobNav(4)">👤<span>Profile</span></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
