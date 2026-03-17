@@ -24,7 +24,7 @@ JWT_SECRET = "pathforge_secret_2025"
 
 # ─── IMPORTANT: Replace with your actual Google OAuth Client ID ─────────────
 # Get it from: https://console.cloud.google.com → APIs & Services → Credentials
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = "178470613680-f7grjhb4s2evs8f8u36rtouljh6dpgj3.apps.googleusercontent.com"
 # ────────────────────────────────────────────────────────────────────────────
 
 db = {
@@ -668,29 +668,61 @@ def compute_score(career, profile):
     comm = skills.get("comm", 0)
     prob = skills.get("prob", 0)
     tech = skills.get("tech", 0)
+    field = profile.get("field", "other")
+    qual  = profile.get("qualification", "ug")
+
+    # ── 1. Base skill score using career-specific weights ──────────────────
     w = career["skill_weights"]
-    skill_score = prog*w["prog"] + data*w["data"] + comm*w["comm"] + prob*w["prob"] + tech*w["tech"]
-    tools = profile.get("tools", [])
-    tool_bonus = 0
-    for tool in tools:
-        if tool in career["tool_boost"]:
-            tool_bonus += career["tool_boost"][tool]
-    tool_bonus = min(tool_bonus, 20)
+    base_skill_score = (prog*w["prog"] + data*w["data"] +
+                        comm*w["comm"] + prob*w["prob"] + tech*w["tech"])
+
+    # ── 2. Field match — STRONG signal, no penalty for unrelated fields ────
+    # Instead of penalising (-15) for field mismatch, just reward matches.
+    # This stops data roles always topping the list for every field.
+    field_bonus = 0
+    if field != "other":
+        if field in career["field_match"]:
+            field_bonus = 30          # strong positive signal
+        else:
+            field_bonus = -10         # mild discouragement, not a killer
+
+    # ── 3. Field-specific career category bonus ────────────────────────────
+    # Boosts careers that are naturally suited to the field of study
+    FIELD_CAREER_BONUS = {
+        "medical":   [11, 13, 14, 15, 16, 17, 18],   # healthcare careers
+        "engg":      [3, 4, 10, 14, 17],              # ML, data eng, cloud, embedded
+        "cs":        [1, 2, 3, 4, 5, 8, 10],          # data, ml, cloud, qa
+        "commerce":  [2, 5, 7, 9, 12],                # BI, product, marketing, govt, freelance
+        "science":   [1, 3, 11, 15, 18],              # data, ML, healthcare, clinical, biomedical
+        "arts":      [7, 5, 12, 9],                   # digital marketing, product, freelance, govt
+        "law":       [9, 5, 12],                      # govt, product, freelance
+    }
+    natural_fit_bonus = 0
+    if field in FIELD_CAREER_BONUS and career["id"] in FIELD_CAREER_BONUS[field]:
+        natural_fit_bonus = 15
+
+    # ── 4. Goal alignment ─────────────────────────────────────────────────
     goals = profile.get("goals", [])
     goal_bonus = 0
     for goal in goals:
         if goal in career["goal_match"]:
-            goal_bonus += 5
-    goal_bonus = min(goal_bonus, 10)
+            goal_bonus += 10
+    goal_bonus = min(goal_bonus, 20)
+
+    # ── 5. Interest alignment ─────────────────────────────────────────────
     interests = profile.get("interests", [])
     interest_bonus = 0
     for interest in interests:
         if interest in career["interest_match"]:
-            interest_bonus += 3
-    interest_bonus = min(interest_bonus, 8)
-    field = profile.get("field", "other")
-    field_bonus = 5 if field in career["field_match"] else 0
-    qual = profile.get("qualification", "ug")
+            interest_bonus += 5
+    interest_bonus = min(interest_bonus, 15)
+
+    # ── 6. Tool / technology match ────────────────────────────────────────
+    tools = profile.get("tools", [])
+    tool_bonus = sum([career["tool_boost"].get(t, 0) for t in tools])
+    tool_bonus = min(tool_bonus, 20)
+
+    # ── 7. Qualification suitability ─────────────────────────────────────
     qual_scores = {"phd": 5, "pg": 4, "ug": 3, "diploma": 2, "12th": 1, "10th": 0}
     qual_val = qual_scores.get(qual, 2)
     nsqf_needed = career["nsqf_level"]
@@ -700,9 +732,34 @@ def compute_score(career, profile):
         qual_bonus = 5
     else:
         qual_bonus = qual_val
-    total = skill_score + tool_bonus + goal_bonus + interest_bonus + field_bonus + qual_bonus
-    return min(99, max(20, round(total)))
 
+    # ── 8. Skill deficit penalty (reduces score if you lack core skills) ──
+    reqs = career.get("required_skills", {})
+    max_needed = {"prog": 0, "data": 0, "comm": 0, "tech": 0}
+    for req_name, req_info in reqs.items():
+        if "needed_prog" in req_info:
+            max_needed["prog"] = max(max_needed["prog"], req_info["needed_prog"])
+        if "needed_data" in req_info:
+            max_needed["data"] = max(max_needed["data"], req_info["needed_data"])
+        if "needed_comm" in req_info:
+            max_needed["comm"] = max(max_needed["comm"], req_info["needed_comm"])
+        if "needed_tech" in req_info:
+            max_needed["tech"] = max(max_needed["tech"], req_info["needed_tech"])
+    deficit = 0
+    if prog < max_needed["prog"]: deficit += (max_needed["prog"] - prog) * w["prog"]
+    if data < max_needed["data"]: deficit += (max_needed["data"] - data) * w["data"]
+    if comm < max_needed["comm"]: deficit += (max_needed["comm"] - comm) * w["comm"]
+    if tech < max_needed["tech"]: deficit += (max_needed["tech"] - tech) * w["tech"]
+    skill_deficit_penalty = deficit * 2.5
+
+    # ── 9. Final score ────────────────────────────────────────────────────
+    raw_score = (base_skill_score + field_bonus + natural_fit_bonus +
+                 goal_bonus + interest_bonus + tool_bonus +
+                 qual_bonus - skill_deficit_penalty)
+
+    # Normalize to 0–99 range (max theoretical raw ~200)
+    match_pct = (raw_score / 200.0) * 100
+    return min(99, max(15, round(match_pct)))
 
 def compute_skill_gaps(career, profile, skill_states):
     skills = profile.get("skills", {})
@@ -718,14 +775,16 @@ def compute_skill_gaps(career, profile, skill_states):
                 already_has = True
                 break
         if not already_has:
-            if "needed_prog" in req and skills.get("prog", 0) >= req["needed_prog"]:
+    
+            if "needed_prog" in req and skills.get("prog", 0) >= max(req["needed_prog"], 70):
                 already_has = True
-            if "needed_data" in req and skills.get("data", 0) >= req["needed_data"]:
+            if "needed_data" in req and skills.get("data", 0) >= max(req["needed_data"], 70):
                 already_has = True
-            if "needed_comm" in req and skills.get("comm", 0) >= req["needed_comm"]:
+            if "needed_comm" in req and skills.get("comm", 0) >= max(req["needed_comm"], 70):
                 already_has = True
-            if "needed_tech" in req and skills.get("tech", 0) >= req["needed_tech"]:
+            if "needed_tech" in req and skills.get("tech", 0) >= max(req["needed_tech"], 70):
                 already_has = True
+            
         if already_has or state == "completed":
             have.append({"name": skill_name, "weight": req.get("weight", "medium"), "state": "completed"})
         elif state == "learning":
@@ -925,8 +984,10 @@ def google_login():
         id_info = id_token.verify_oauth2_token(
             credential,
             grequests.Request(),
-            GOOGLE_CLIENT_ID
-        )
+            GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=10
+ )
+       
         google_id = id_info["sub"]
         email = id_info["email"]
         name = id_info.get("name", email.split("@")[0])

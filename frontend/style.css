@@ -329,3 +329,179 @@ input[type=range]::-webkit-slider-thumb { appearance:none; width:18px; height:18
   position: relative;
   overflow: hidden;
 }
+
+/* ── Google Auth Divider ── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
+/* ── Google button container ── */
+.g_id_signin {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+/* ── IN-APP LEARN MODULE CARDS ── */
+.learn-module-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  transition: border-color .2s, transform .2s;
+  cursor: none;
+}
+.learn-module-card:hover {
+  border-color: rgba(244,185,66,.4);
+  transform: translateY(-2px);
+}
+.learn-module-card.locked {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.learn-module-card.completed {
+  border-color: rgba(77,216,154,.3);
+  background: linear-gradient(135deg, var(--surface2), rgba(77,216,154,.04));
+}
+.lm-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.lm-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.lm-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.lm-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.lm-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: var(--surface3);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.lm-progress-track {
+  height: 5px;
+  background: var(--surface3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.lm-progress-fill {
+  height: 5px;
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+.lm-progress-label {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+/* Lesson list item in sidebar */
+.lesson-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 6px;
+  transition: background .2s;
+  cursor: none;
+}
+.lesson-list-item:hover { background: var(--surface3); }
+.lesson-list-item.active { background: rgba(244,185,66,.1); color: var(--gold); }
+.lesson-list-item.done .lesson-dot { background: var(--green); }
+.lesson-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--surface3);
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.lesson-dot.done { background: var(--green); border-color: var(--green); }
+.lesson-dot.active { background: var(--gold); border-color: var(--gold); }
+/* Key points */
+.keypoint-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(124,111,255,.07);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+/* Quiz */
+.quiz-question {
+  background: var(--surface3);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.quiz-q-text {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  font-size: 14px;
+  transition: border-color .2s, background .2s;
+  cursor: none;
+}
+.quiz-option:hover { border-color: var(--gold); background: rgba(244,185,66,.05); }
+.quiz-option.correct { border-color: var(--green); background: rgba(77,216,154,.1); }
+.quiz-option.wrong { border-color: var(--red); background: rgba(255,87,87,.1); }
+.quiz-option input[type=radio] { accent-color: var(--gold); }
+/* Badge */
+.learn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(244,185,66,.1);
+  border: 1px solid rgba(244,185,66,.3);
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+}

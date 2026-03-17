@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Google Sign-In SDK -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -32,7 +34,7 @@
 <!-- ══ LANDING ══ -->
 <div class="screen active" id="screen-landing">
   <div class="top-bar">
-    <div class="logo">SmartLearn</div>
+    <div class="logo">Learn Smart</div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="nsqf-badge">🇮🇳 NSQF Aligned</div>
       <div class="theme-toggle" onclick="toggleTheme()"></div>
@@ -57,11 +59,21 @@
     </div>
   </div>
   <div class="features-grid">
-    <div class="feature-card tilt-card"><div class="feature-icon">🎯</div><div class="feature-title">AI Personalisation</div><div class="feature-desc">Tailored career pathways built from your unique background, skills and aspirations.</div></div>
-    <div class="feature-card tilt-card"><div class="feature-icon">📊</div><div class="feature-title">Market Insights</div><div class="feature-desc">Live job demand, salary trends, and location-based opportunities across India.</div></div>
-    <div class="feature-card tilt-card"><div class="feature-icon">🗺️</div><div class="feature-title">Skill Roadmaps</div><div class="feature-desc">Step-by-step NSQF-aligned learning roadmaps from where you are to your goal.</div></div>
-    <div class="feature-card tilt-card"><div class="feature-icon">📚</div><div class="feature-title">Curated Training</div><div class="feature-desc">Hand-picked courses and apprenticeships matched to your exact skill gaps.</div></div>
+  <div class="feature-card tilt-card"><div class="feature-icon">🎯</div><div class="feature-title">AI Personalisation</div><div class="feature-desc">Tailored career pathways built from your unique background, skills and aspirations.</div></div>
+  <div class="feature-card tilt-card"><div class="feature-icon">📊</div><div class="feature-title">Market Insights</div><div class="feature-desc">Live job demand, salary trends, and location-based opportunities across India.</div></div>
+  <div class="feature-card tilt-card"><div class="feature-icon">🗺️</div><div class="feature-title">Skill Roadmaps</div><div class="feature-desc">Step-by-step NSQF-aligned learning roadmaps from where you are to your goal.</div></div>
+  <div class="feature-card tilt-card"><div class="feature-icon">📚</div><div class="feature-title">Curated Training</div><div class="feature-desc">Hand-picked courses and apprenticeships matched to your exact skill gaps.</div></div>
+  <div class="feature-card tilt-card" style="grid-column:1/-1;background:linear-gradient(135deg,rgba(244,185,66,0.08),rgba(124,111,255,0.08));border:1px solid rgba(244,185,66,0.2);">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div style="font-size:3em;">📄</div>
+      <div style="flex:1;min-width:200px;">
+        <div class="feature-title" style="font-size:1.2em;">AI Resume Builder</div>
+        <div class="feature-desc">Instantly generate a professional resume from your PathForge profile. Download as PDF in one click — no sign-in required to preview.</div>
+      </div>
+      <button class="btn-primary" onclick="showScreen('auth')" style="white-space:nowrap;">Build My Resume →</button>
+    </div>
   </div>
+</div>
   <div class="footer-bar">Aligned with National Council for Vocational Education and Training (NCVET) · Government of India</div>
 </div>
 
@@ -73,7 +85,7 @@
   </div>
   <div class="center-wrap">
     <div class="auth-card">
-      <div class="auth-logo">PathForge ✦</div>
+      <div class="auth-logo">Smart Learn ✦</div>
       <div class="tab-row">
         <div class="tab-btn active" id="tab-login" onclick="switchTab('login')">Sign In</div>
         <div class="tab-btn" id="tab-register" onclick="switchTab('register')">Register</div>
@@ -84,6 +96,20 @@
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="login-email" placeholder="you@example.com" value="priya@example.com"></div>
         <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="login-pwd" placeholder="••••••••" value="password"></div>
         <button class="btn-primary full-width" onclick="handleLogin()">Sign In →</button>
+<div class="auth-divider"><span>or</span></div>
+<div id="g_id_onload"
+     data-client_id="178470613680-f7grjhb4s2evs8f8u36rtouljh6dpgj3.apps.googleusercontent.com"
+     data-callback="handleGoogleLogin"
+     data-auto_prompt="false">
+</div>
+<div class="g_id_signin"
+     data-type="standard"
+     data-size="large"
+     data-theme="filled_black"
+     data-text="signin_with"
+     data-shape="rectangular"
+     data-width="100%">
+</div>
         <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:14px;">Demo: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3e4e4c57475f7e5b465f534e525b105d5153">[email&#160;protected]</a> / password</p>
       </div>
       <div id="register-form" style="display:none">
@@ -91,8 +117,18 @@
         <div class="auth-sub">Join millions building their career with AI</div>
         <div class="form-group"><label class="form-label">Full Name</label><input class="form-input" type="text" id="reg-name" placeholder="Priya Sharma"></div>
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="reg-email" placeholder="you@example.com"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="tel" id="reg-phone" placeholder="+91 9876543210"></div>
         <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="reg-pwd" placeholder="Create a strong password"></div>
         <button class="btn-primary full-width" onclick="handleRegister()">Create Account →</button>
+<div class="auth-divider"><span>or continue with</span></div>
+<div class="g_id_signin"
+     data-type="standard"
+     data-size="large"
+     data-theme="filled_black"
+     data-text="signup_with"
+     data-shape="rectangular"
+     data-width="100%">
+</div>
       </div>
     </div>
   </div>
@@ -101,17 +137,31 @@
 <!-- ══ ONBOARDING ══ -->
 <div class="screen" id="screen-onboarding">
   <div class="top-bar">
-    <div class="logo">PathForge</div>
+    <div class="logo">Learn Smart</div>
     <div class="ai-badge"><span class="ai-dot"></span>AI Profile Builder</div>
   </div>
   <div class="center-wrap top-align">
     <div class="onboarding-wrap">
       <div class="step-progress" id="step-progress"></div>
 
-      <div class="card" id="step-1">
-        <div class="section-tag">Step 1 of 5</div>
-        <div class="card-title">Academic Background</div>
-        <div class="card-sub">Tell us about your educational foundation</div>
+      <div class="card" id="step-0">
+        <div class="section-tag">Welcome</div>
+        <div class="card-title">Upload Your Resume</div>
+        <div class="card-sub">We can autofill your profile based on your existing resume.</div>
+        
+        <div class="upload-zone" id="resume-upload-zone" onclick="document.getElementById('resume-file').click()">
+          <div style="font-size:2em;margin-bottom:10px;">📄</div>
+          <div>Click to upload or drag and drop</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:5px;">PDF, DOC, DOCX (Max 5MB)</div>
+          <input type="file" id="resume-file" accept=".pdf,.doc,.docx" style="display:none" onchange="handleResumeUpload()">
+        </div>
+
+        <div class="nav-row" style="margin-top:20px;justify-content:center;">
+          <button class="btn-ghost" onclick="nextStep(1)">Skip & Enter Manually →</button>
+        </div>
+      </div>
+
+      <div class="card" id="step-1" style="display:none">
         <div class="form-group"><label class="form-label">Highest Qualification</label>
           <select class="form-input" id="qualification">
             <option value="10th">Class 10</option><option value="12th">Class 12</option>
@@ -125,11 +175,22 @@
             <option value="arts">Arts / Humanities</option><option value="medical">Medical</option>
             <option value="law">Law</option><option value="other">Other</option>
           </select></div>
-        <div class="form-group"><label class="form-label">Year of Completion</label>
-          <select class="form-input" id="grad-year">
-            <option value="2024" selected>2024</option><option value="2023">2023</option>
-            <option value="2022">2022</option><option value="2021">2021</option><option value="older">Before 2021</option>
-          </select></div>
+      <div class="form-group"><label class="form-label">Year of Completion</label>
+         <select class="form-input" id="grad-year">
+           <option value="2029">2029 (Expected)</option>
+           <option value="2028">2028 (Expected)</option>
+           <option value="2027">2027 (Expected)</option>
+           <option value="2026">2026 (Expected)</option>
+           <option value="2025">2025</option>
+            <option value="2024" selected>2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+           <option value="2021">2021</option>
+           <option value="2020">2020</option>
+           <option value="2019">2019</option>
+           <option value="2018">2018</option>
+            <option value="older">Before 2018</option>
+         </select></div>
         <div class="nav-row"><button class="btn-primary" onclick="goToSkills()">Next →</button></div>
       </div>
 
@@ -217,7 +278,7 @@
   <div class="dash-layout">
     <div class="sidebar">
       <div class="sidebar-head">
-        <div class="logo">PathForge ✦</div>
+        <div class="logo">Learn Smart✦</div>
         <div class="theme-toggle" onclick="toggleTheme()"></div>
       </div>
       <div class="nav-item active" onclick="switchPage('overview',this)"><span>🏠</span> Overview</div>
@@ -225,6 +286,7 @@
       <div class="nav-item" onclick="switchPage('skills',this)"><span>⚡</span> Skill Analysis</div>
       <div class="nav-item" onclick="switchPage('roadmap',this)"><span>🗺️</span> Roadmap</div>
       <div class="nav-item" onclick="switchPage('courses',this)"><span>📚</span> Training</div>
+      <div class="nav-item" onclick="switchPage('learn',this)"><span>🎓</span> Learn <span id="learn-xp-badge" style="margin-left:auto;background:rgba(244,185,66,0.2);color:var(--gold);font-size:10px;padding:2px 7px;border-radius:100px;font-weight:700;">0 XP</span></div>
       <div class="nav-item" onclick="switchPage('market',this)"><span>📊</span> Market Trends</div>
       <div class="nav-item" onclick="switchPage('salary',this)"><span>💰</span> Salary Calculator</div>
       <div class="nav-item" onclick="switchPage('profile',this)"><span>👤</span> My Profile</div>
@@ -309,6 +371,93 @@
         <div class="page-header"><div><div class="page-title">Recommended Training</div><div class="page-sub">NSQF-certified programs for your skill gaps</div></div></div>
         <div class="courses-grid" id="courses-grid"></div>
       </div>
+      <!-- LEARN -->
+<div class="page" id="page-learn">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🎓 Learn</div>
+      <div class="page-sub" id="learn-page-sub">AI-curated lessons for your career path</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="ai-badge"><span class="ai-dot"></span><span id="learn-xp-display">0 XP earned</span></div>
+    </div>
+  </div>
+
+  <!-- Overall progress bar -->
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;">Overall Learning Progress</div>
+      <div id="learn-overall-pct" style="color:var(--gold);font-weight:700;font-size:15px;">0%</div>
+    </div>
+    <div style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;">
+      <div id="learn-overall-bar" style="height:8px;background:linear-gradient(90deg,var(--gold),var(--accent));border-radius:4px;width:0%;transition:width 1s ease;"></div>
+    </div>
+    <div id="learn-badges-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;"></div>
+  </div>
+
+  <!-- Module list -->
+  <div id="learn-modules-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;"></div>
+
+  <!-- Lesson viewer (hidden by default) -->
+  <div id="lesson-viewer" style="display:none;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <button onclick="closeLessonViewer()" style="background:var(--surface2);border:1px solid var(--border);border-radius:100px;padding:8px 16px;color:var(--txt);font-size:13px;">← Back to Modules</button>
+      <div id="lesson-viewer-breadcrumb" style="font-size:13px;color:var(--muted);"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;" id="lesson-layout">
+      <!-- Main content -->
+      <div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;">
+          <div id="lesson-video-wrap" style="background:#000;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;">
+            <iframe id="lesson-video" style="width:100%;height:100%;border:none;" allowfullscreen></iframe>
+            <div id="lesson-video-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--surface3);">
+              <div style="font-size:48px;">📖</div>
+              <div style="color:var(--muted);font-size:14px;">Reading Lesson — No Video</div>
+            </div>
+          </div>
+          <div style="padding:24px;">
+            <div id="lesson-nsqf-tag" style="display:inline-block;background:rgba(124,111,255,.15);color:var(--accent);border-radius:100px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;margin-bottom:12px;"></div>
+            <div id="lesson-title" style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:8px;"></div>
+            <div id="lesson-desc" style="font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:20px;"></div>
+            <div id="lesson-keypoints" style="margin-bottom:20px;"></div>
+            <div id="lesson-resources" style="margin-bottom:20px;"></div>
+          </div>
+        </div>
+
+        <!-- Quiz section -->
+        <div id="lesson-quiz-wrap" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;display:none;">
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px;">🧠 Quick Quiz</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Test your understanding before marking complete</div>
+          <div id="quiz-questions"></div>
+          <button onclick="submitQuiz()" class="btn-primary" style="margin-top:16px;padding:10px 24px;">Submit Quiz →</button>
+          <div id="quiz-result" style="margin-top:14px;display:none;"></div>
+        </div>
+
+        <!-- Complete button -->
+        <div id="lesson-complete-wrap" style="margin-top:16px;display:flex;gap:12px;align-items:center;">
+          <button id="lesson-complete-btn" onclick="completeLesson()" class="btn-primary" style="padding:12px 28px;">✅ Mark as Complete (+<span id="lesson-xp">50</span> XP)</button>
+          <div id="lesson-already-done" style="display:none;color:var(--green);font-weight:700;font-size:14px;">✓ Completed!</div>
+        </div>
+      </div>
+
+      <!-- Sidebar: module lessons list -->
+      <div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:sticky;top:20px;">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:var(--gold);" id="module-sidebar-title">Module Lessons</div>
+          <div id="module-lessons-list"></div>
+          <!-- Module progress -->
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Module Progress</div>
+            <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+              <div id="module-progress-bar" style="height:6px;background:linear-gradient(90deg,var(--gold),var(--accent));border-radius:3px;width:0%;transition:width .8s ease;"></div>
+            </div>
+            <div id="module-progress-text" style="font-size:12px;color:var(--muted);margin-top:4px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
       <!-- MARKET -->
       <div class="page" id="page-market">
@@ -325,11 +474,9 @@
         <div class="salary-calc">
           <div class="calc-grid">
             <div class="form-group"><label class="form-label">Role</label>
-              <select class="form-input" id="calc-role" onchange="calcSalary()">
-                <option value="da">Data Analyst</option><option value="bi">BI Analyst</option>
-                <option value="ds">Data Scientist</option><option value="ml">ML Engineer</option>
-                <option value="de">Data Engineer</option><option value="ca">Cloud Architect</option>
-              </select></div>
+             <select class="form-input" id="calc-role" onchange="calcSalary()">
+               <option value="1">Data Analyst</option>
+             </select></div>
             <div class="form-group"><label class="form-label">City</label>
               <select class="form-input" id="calc-city" onchange="calcSalary()">
                 <option value="bangalore">Bengaluru</option><option value="hyderabad">Hyderabad</option>
@@ -361,7 +508,11 @@
         </div>
         <div class="profile-hero">
           <div class="profile-big-avatar" id="profile-avatar">P</div>
-          <div><div class="profile-name" id="profile-name">Priya Sharma</div><div class="profile-email" id="profile-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aededcc7d7cfeecbd6cfc3dec2cb80cdc1c3">[email&#160;protected]</a></div></div>
+          <div>
+            <div class="profile-name" id="profile-name">Priya Sharma</div>
+            <div class="profile-email" id="profile-email">email@example.com</div>
+            <button class="btn-primary small" style="margin-top:10px" onclick="generateResume()">📄 Generate Resume</button>
+          </div>
         </div>
         <div class="profile-section">
           <div class="profile-section-title">Profile Completion</div>
@@ -410,6 +561,18 @@
     <div class="mob-nav-btn" onclick="switchPage('profile',null);updateMobNav(4)">👤<span>Profile</span></div>
   </div>
 </div>
+
+  <!-- RESUME MODAL -->
+  <div class="modal-overlay" id="resume-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:all 0.3s ease;backdrop-filter:blur(4px)">
+    <div class="modal-content" style="background:#1a1b26;padding:30px;border-radius:16px;max-width:650px;width:90%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 20px 40px rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);">
+      <button onclick="document.getElementById('resume-modal').style.opacity='0';setTimeout(()=>document.getElementById('resume-modal').style.display='none',300)" style="position:absolute;top:15px;right:15px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);opacity:0.6;transition:0.2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">×</button>
+      <h2 style="margin-top:0;margin-bottom:20px;display:flex;align-items:center;gap:10px;font-weight:600"><span class="ai-dot"></span> AI Generated Resume</h2>
+      <div id="resume-output" style="font-family:'Courier New',Courier,monospace;white-space:pre-wrap;background:rgba(0,0,0,0.3);padding:24px;border-radius:12px;font-size:14px;line-height:1.6;color:#e2e8f0;border:1px solid rgba(255,255,255,0.05)"></div>
+      <div style="margin-top:24px;text-align:right">
+        <button class="btn-primary" onclick="window.print()" style="padding:10px 24px;border-radius:8px;font-weight:600">Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
 
 <script src="app.js"></script>
 <script src="effects.js"></script>

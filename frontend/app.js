@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// PathForge – Frontend (connects to Python smart backend)
+// Learn Smart – Frontend (connects to Python smart backend)
 // Backend must be running on http://localhost:3001
 // ═══════════════════════════════════════════════════════════
 
@@ -16,7 +16,844 @@ var APP = {
   compareList: [],
   skillStates: {},
   charts: {},
-  topCareerId: 1
+  topCareerId: 1,
+  learnProgress: JSON.parse(localStorage.getItem('pf_learn')||'{}'),
+  learnXP: parseInt(localStorage.getItem('pf_xp')||'0')
+};
+// ─────────────────────────────────────────
+// FIELD → CAREER MAPPING
+// Maps each field of study to relevant career IDs and market data
+// ─────────────────────────────────────────
+var FIELD_DATA = {
+  cs: {
+    careerIds: [1,2,3,4,5,8,10],
+    salaryRoles: ['Data Analyst','ML Engineer','Cloud Architect','Full Stack Dev','QA Engineer'],
+    salaryMin:   [5, 8, 10, 6, 4],
+    salaryMax:   [12,22, 32, 18, 10],
+    demandLabels:['Data Analyst','ML Engineer','Cloud Architect','DevOps','QA Engineer','Full Stack','Cybersecurity','BI Analyst'],
+    demandValues:[48, 38, 29, 35, 12, 42, 24, 22],
+    insights:[
+      {label:'Top Role',       val:'ML Engineer',  sub:'↑ 42% demand in 2025'},
+      {label:'Avg CS Salary',  val:'₹10.5 LPA',    sub:'Freshers: ₹5–8 LPA'},
+      {label:'Top Skill',      val:'Python',        sub:'Listed in 80% of JDs'},
+      {label:'Remote Jobs',    val:'38%',           sub:'Of all IT roles'},
+      {label:'Top City',       val:'Bengaluru',     sub:'Highest CS openings'},
+      {label:'Fresher Roles',  val:'22,000+',       sub:'Entry-level this month'}
+    ],
+    whatsNew:[
+      'ML Engineer demand up 42% — fastest growing CS role in India',
+      'Cloud certifications (AWS/Azure) adding ₹2–3 LPA to fresher packages',
+      'Full Stack developers with React + Node.js top hiring list in Bengaluru',
+      'Python overtook Java as most-listed skill in Indian IT job postings',
+      'Cybersecurity roles grew 24% — NASSCOM reports shortage of 1 lakh professionals'
+    ]
+  },
+  engg: {
+    careerIds: [3,4,6,10,14,17],
+    salaryRoles: ['Embedded SW Eng','Data Engineer','Cloud Architect','ML Engineer','Medical Device SW','IoT Developer'],
+    salaryMin:   [5, 6, 8, 7, 7, 5],
+    salaryMax:   [14,18,32,22,22,15],
+    demandLabels:['Embedded Systems','Cloud/DevOps','ML Engineer','Data Engineer','IoT Developer','Automation Eng','Robotics','Cybersecurity'],
+    demandValues:[28, 35, 38, 29, 22, 25, 15, 24],
+    insights:[
+      {label:'Top Role',       val:'Cloud/DevOps',  sub:'↑ 35% demand in 2025'},
+      {label:'Avg Engg Salary',val:'₹9.5 LPA',      sub:'Freshers: ₹5–7 LPA'},
+      {label:'Top Skill',      val:'C/C++ + Python', sub:'Core to 70% of roles'},
+      {label:'Hot Domain',     val:'EV & Robotics',  sub:'Growing 40% YoY'},
+      {label:'Top City',       val:'Pune & Bengaluru',sub:'Manufacturing + IT hub'},
+      {label:'Fresher Roles',  val:'18,000+',        sub:'Entry-level openings'}
+    ],
+    whatsNew:[
+      'EV industry creating 15,000+ embedded software jobs in India',
+      'C++ developers with RTOS experience seeing 30% salary premium',
+      'Cloud DevOps engineers now required in core manufacturing firms',
+      'IEC 62304 certified medical device engineers in high demand',
+      'ISRO and DRDO expanding hiring for embedded systems engineers'
+    ]
+  },
+  medical: {
+    careerIds: [11,13,14,15,16,17,18],
+    salaryRoles: ['Health Informatics','Clinical Data Eng','AI Diagnostics','Telemedicine Dev','Biomedical AI','Healthcare Analyst'],
+    salaryMin:   [6, 6, 9, 6, 8, 4],
+    salaryMax:   [18,20,26,18,24,12],
+    demandLabels:['Health Informatics','AI Diagnostics','Clinical Data','Telemedicine Dev','Biomedical AI','Healthcare Analyst','Medical Device SW','Digital Health'],
+    demandValues:[32, 28, 22, 35, 18, 30, 25, 40],
+    insights:[
+      {label:'Top Role',       val:'Telemedicine Dev', sub:'↑ 38% demand in 2025'},
+      {label:'Avg Med-Tech Sal',val:'₹11 LPA',         sub:'Freshers: ₹6–9 LPA'},
+      {label:'Top Skill',      val:'HL7 / FHIR',       sub:'Standard for health IT'},
+      {label:'Hot Domain',     val:'AI Diagnostics',   sub:'Growing 48% YoY'},
+      {label:'Top City',       val:'Bengaluru & Mumbai',sub:'Health-tech hubs'},
+      {label:'Fresher Roles',  val:'9,000+',            sub:'Health IT openings'}
+    ],
+    whatsNew:[
+      'AIIMS and Apollo launching AI diagnostics projects — 5000 jobs expected',
+      'HL7 FHIR developers among top 5 highest-paid health-tech roles',
+      'Telemedicine platforms grew 300% post-COVID — demand still rising',
+      'Clinical data engineers with SAS certification earn 25% more',
+      'National Digital Health Mission creating 20,000 health IT roles'
+    ]
+  },
+  commerce: {
+    careerIds: [2,5,7,9,12,1],
+    salaryRoles: ['BI Analyst','Product Analyst','Digital Marketer','Govt Data Officer','Financial Analyst','Freelance Consultant'],
+    salaryMin:   [5, 5, 3.5, 4, 5, 3],
+    salaryMax:   [15,15, 10, 11, 18, 18],
+    demandLabels:['BI Analyst','Digital Marketing','Product Analyst','Financial Analyst','Govt Data','E-commerce Analyst','CRM Specialist','Freelance Consultant'],
+    demandValues:[22, 24, 15, 28, 8, 20, 14, 18],
+    insights:[
+      {label:'Top Role',        val:'Financial Analyst', sub:'↑ 28% demand in 2025'},
+      {label:'Avg Commerce Sal',val:'₹7.5 LPA',          sub:'Freshers: ₹4–6 LPA'},
+      {label:'Top Skill',       val:'Excel + Power BI',  sub:'Required in 75% of JDs'},
+      {label:'Hot Domain',      val:'Fintech',            sub:'Growing 35% YoY'},
+      {label:'Top City',        val:'Mumbai & Delhi',     sub:'Finance & commerce hubs'},
+      {label:'Fresher Roles',   val:'14,000+',            sub:'Commerce openings'}
+    ],
+    whatsNew:[
+      'Fintech sector added 12,000 commerce graduate roles in Q1 2025',
+      'Power BI certified commerce graduates earning ₹2 LPA more on average',
+      'E-commerce analyst roles growing 20% as D2C brands expand',
+      'CA + Data Analytics combo now most sought-after in BFSI sector',
+      'Digital marketing freshers with Google certification getting 40% more calls'
+    ]
+  },
+  science: {
+    careerIds: [1,3,11,15,18,9],
+    salaryRoles: ['Data Scientist','ML Researcher','Biomedical AI','Clinical Data Eng','Research Analyst','Govt Data Officer'],
+    salaryMin:   [6, 8, 8, 6, 5, 4],
+    salaryMax:   [20,24,24,20,15,11],
+    demandLabels:['Data Scientist','ML Researcher','Biomedical AI','Research Analyst','Climate Data Sci','Bioinformatics','Govt Scientist','Clinical Data'],
+    demandValues:[32, 28, 18, 20, 15, 14, 10, 22],
+    insights:[
+      {label:'Top Role',        val:'Data Scientist',  sub:'↑ 32% demand in 2025'},
+      {label:'Avg Science Sal', val:'₹10 LPA',         sub:'Freshers: ₹5–8 LPA'},
+      {label:'Top Skill',       val:'Python + R',      sub:'Core research tools'},
+      {label:'Hot Domain',      val:'Bioinformatics',  sub:'Growing 45% YoY'},
+      {label:'Top City',        val:'Bengaluru & Pune',sub:'R&D and pharma hubs'},
+      {label:'Research Roles',  val:'8,000+',          sub:'Science grad openings'}
+    ],
+    whatsNew:[
+      'Bioinformatics roles grew 45% — genomics and drug discovery driving demand',
+      'IIT and IISc research labs hiring Python + R specialists at ₹8–12 LPA',
+      'Climate data scientists in high demand as ESG reporting becomes mandatory',
+      'ISRO expanding data science team for satellite data analysis',
+      'CSIR labs offering ₹50,000/month stipends for science graduates'
+    ]
+  },
+  arts: {
+    careerIds: [7,5,12,9,6],
+    salaryRoles: ['Digital Marketer','Content Strategist','UX Writer','Product Analyst','Social Media Manager'],
+    salaryMin:   [3.5, 4, 4, 5, 3],
+    salaryMax:   [10, 12, 14, 15, 9],
+    demandLabels:['Digital Marketing','Content Strategy','UX Writing','Social Media','Product Analyst','SEO Specialist','Brand Manager','PR & Comms'],
+    demandValues:[24, 18, 16, 22, 15, 20, 12, 10],
+    insights:[
+      {label:'Top Role',       val:'Digital Marketer', sub:'↑ 28% demand in 2025'},
+      {label:'Avg Arts Salary',val:'₹6 LPA',           sub:'Freshers: ₹3.5–5 LPA'},
+      {label:'Top Skill',      val:'Content + SEO',    sub:'Required in 70% of JDs'},
+      {label:'Hot Domain',     val:'UX Writing',       sub:'Growing 40% YoY'},
+      {label:'Top City',       val:'Mumbai & Delhi',   sub:'Media & marketing hubs'},
+      {label:'Fresher Roles',  val:'10,000+',          sub:'Arts grad openings'}
+    ],
+    whatsNew:[
+      'UX Writers now earning ₹8–14 LPA — highest-paying arts career in tech',
+      'Content marketing budgets doubled — 18,000 new roles created in 2025',
+      'Social media managers with Meta ads certification earning 35% more',
+      'D2C brands hiring arts graduates for brand strategy at ₹6–10 LPA',
+      'Google Digital Garage certification doubling interview callback rates'
+    ]
+  },
+  law: {
+    careerIds: [9,5,12,6],
+    salaryRoles: ['Legal Tech Analyst','Compliance Officer','Policy Analyst','Govt Data Officer','Legal Researcher'],
+    salaryMin:   [5, 6, 5, 4, 4],
+    salaryMax:   [15,18,14,11,10],
+    demandLabels:['Legal Tech','Compliance','Policy Analyst','Govt Data','IP Lawyer','Contract Manager','Legal Researcher','LegalOps'],
+    demandValues:[18, 22, 15, 8, 20, 16, 10, 14],
+    insights:[
+      {label:'Top Role',      val:'Compliance Officer', sub:'↑ 22% demand in 2025'},
+      {label:'Avg Law Salary',val:'₹8 LPA',             sub:'Freshers: ₹4–6 LPA'},
+      {label:'Top Skill',     val:'Legal + Data',       sub:'LegalTech is booming'},
+      {label:'Hot Domain',    val:'Compliance Tech',    sub:'Growing 30% YoY'},
+      {label:'Top City',      val:'Delhi & Mumbai',     sub:'Legal hubs of India'},
+      {label:'Fresher Roles', val:'6,000+',             sub:'Law grad openings'}
+    ],
+    whatsNew:[
+      'LegalTech startups raised $200M in 2025 — hiring law + tech graduates',
+      'SEBI and RBI expanding compliance teams — 3000 new roles',
+      'Contract management software skills adding ₹2 LPA to law graduate packages',
+      'India IP filings grew 20% — IP lawyers in high demand',
+      'Government legal data roles growing under Digital India initiative'
+    ]
+  },
+  other: {
+    careerIds: [1,5,7,9,12],
+    salaryRoles: ['Data Analyst','Digital Marketer','Product Analyst','Govt Officer','Freelancer'],
+    salaryMin:   [4.5, 3.5, 5, 4, 3],
+    salaryMax:   [12, 10, 15, 11, 18],
+    demandLabels:['Data Analyst','Digital Marketing','Product Analyst','Govt Data','Freelance','Content Creator','Operations','Customer Success'],
+    demandValues:[48, 24, 15, 8, 18, 16, 20, 12],
+    insights:[
+      {label:'Top Role',      val:'Data Analyst',   sub:'↑ 22% demand in 2025'},
+      {label:'Avg Salary',    val:'₹7 LPA',         sub:'Freshers: ₹4–6 LPA'},
+      {label:'Top Skill',     val:'Excel + Python', sub:'Most versatile combo'},
+      {label:'Hot Domain',    val:'Freelancing',    sub:'Growing 40% YoY'},
+      {label:'Top City',      val:'Bengaluru',      sub:'Most openings'},
+      {label:'Fresher Roles', val:'20,000+',        sub:'Cross-domain openings'}
+    ],
+    whatsNew:[
+      'Freelance data consultants earning ₹15–35 LPA working remotely',
+      'Excel + Power BI skills remain most in-demand across all industries',
+      'Product analyst roles open to all graduates — communication key skill',
+      'Government data roles growing under Digital India initiative',
+      'Upskilling with one certification adding ₹1.5 LPA on average'
+    ]
+  }
+}; 
+// ═══════════════════════════════════════════════════════════
+// IN-APP LEARNING ENGINE
+// ═══════════════════════════════════════════════════════════
+
+// Learning modules database — keyed by career field
+var LEARN_MODULES = {
+
+  // ── COMMON modules (shown for all fields) ──────────────────────────────
+  common: [
+    {
+      id:'comm-1', nsqf:'NSQF Level 3', title:'Resume & LinkedIn Mastery',
+      desc:'Build a job-winning resume and LinkedIn profile that gets recruiter attention.',
+      xp:60, duration:'45 min', lessons:[
+        {id:'c1-l1', title:'What Recruiters Look For in 6 Seconds',
+         videoId:'Tt08KmFfIYQ',
+         content:'Recruiters spend an average of 6–7 seconds scanning a resume. Your name, current title, current company, previous title, previous company, education and start/end dates are the 7 things they check first.',
+         keypoints:['Use a clean single-column layout','Put your strongest achievement first','Quantify everything: "Increased sales by 30%"','Keep it to 1 page for under 3 years experience'],
+         resources:[{title:'Resume Template (Google Docs)',url:'https://docs.google.com/'}]},
+        {id:'c1-l2', title:'Writing Bullet Points That Get Interviews',
+         videoId:null,
+         content:'The STAR method (Situation, Task, Action, Result) transforms weak bullet points into powerful achievement statements that hiring managers remember.',
+         keypoints:['Start every bullet with a strong action verb','Include a number in at least 60% of bullets','Show impact, not just responsibility','Tailor bullets to each job description'],
+         resources:[]},
+        {id:'c1-l3', title:'LinkedIn Profile Optimisation',
+         videoId:'BcfGWi8-2pE',
+         content:'LinkedIn is your digital resume. A complete profile gets 21x more profile views and 36x more messages from recruiters.',
+         keypoints:['Professional photo increases views by 21x','Headline should say what you do + who you help','Summary should tell your story in first person','Add all skills — recruiters filter by skills'],
+         resources:[{title:'LinkedIn Profile Checklist',url:'https://linkedin.com'}]},
+      ],
+      quiz:[
+        {q:'What is the average time a recruiter spends on a resume?',
+         options:['30 seconds','6-7 seconds','2 minutes','1 minute'], answer:1},
+        {q:'Which format is best for writing resume bullet points?',
+         options:['SMART','STAR','ABC','XYZ'], answer:1},
+      ]
+    },
+    {
+      id:'comm-2', nsqf:'NSQF Level 3', title:'Interview Skills & Communication',
+      desc:'Master common interview questions, body language and salary negotiation.',
+      xp:70, duration:'1 hr', lessons:[
+        {id:'c2-l1', title:'Tell Me About Yourself — The Perfect Answer',
+         videoId:'MmFuWmzeiDs',
+         content:'This is the most asked interview question. A perfect answer follows the Present-Past-Future formula: where you are now, how you got here, and where you want to go.',
+         keypoints:['Keep it to 90 seconds','Focus on professional highlights only','End with why you are excited about this role','Practice until it sounds natural, not memorised'],
+         resources:[]},
+        {id:'c2-l2', title:'Salary Negotiation — Get What You Deserve',
+         videoId:null,
+         content:'80% of employers have room to negotiate. Research the market rate, anchor high, and always negotiate in writing.',
+         keypoints:['Always let employer name first number','Counter with 10-20% above their offer','Use data: "Glassdoor shows ₹X for this role"','Never apologize for negotiating'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'What is the Present-Past-Future formula used for?',
+         options:['Writing resumes','Answering Tell Me About Yourself','Salary negotiation','LinkedIn bios'], answer:1},
+        {q:'How much above the first offer should you counter-negotiate?',
+         options:['Exactly the same','5%','10-20%','50%'], answer:2},
+      ]
+    }
+  ],
+
+  cs: [
+    {
+      id:'cs-1', nsqf:'NSQF Level 4', title:'Python for Data Science — Foundations',
+      desc:'Learn Python basics, data structures, and your first data analysis scripts.',
+      xp:100, duration:'3 hrs', lessons:[
+        {id:'cs1-l1', title:'Python Basics: Variables, Lists, Loops',
+         videoId:'rfscVS0vtbw',
+         content:'Python is the #1 language in data science. Master variables, lists, dictionaries, and for loops — these 4 concepts cover 80% of data scripts.',
+         keypoints:['Variables store data: x = 10','Lists store multiple items: [1,2,3]','Dictionaries store key-value pairs: {"name":"Priya"}','For loops iterate: for item in list:'],
+         resources:[{title:'Python.org Official Docs',url:'https://docs.python.org/3/tutorial/'}]},
+        {id:'cs1-l2', title:'NumPy & Pandas — Working with Data',
+         videoId:'vmEHCJofslg',
+         content:'NumPy handles numerical computation, Pandas handles structured data. Together they are the foundation of every data science project.',
+         keypoints:['import numpy as np; import pandas as pd','pd.DataFrame() creates a table','df.head() shows first 5 rows','df.describe() gives statistics'],
+         resources:[{title:'Pandas Documentation',url:'https://pandas.pydata.org/docs/'}]},
+        {id:'cs1-l3', title:'Data Visualisation with Matplotlib',
+         videoId:'3Xc3CA655Y4',
+         content:'Matplotlib turns raw data into charts. Mastering plt.plot(), plt.bar() and plt.scatter() covers 90% of data visualization needs.',
+         keypoints:['import matplotlib.pyplot as plt','plt.plot(x,y) for line charts','plt.bar(x,y) for bar charts','plt.show() renders the chart'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'Which library is used for data tables in Python?',
+         options:['NumPy','Matplotlib','Pandas','Scikit-learn'], answer:2},
+        {q:'Which command shows the first 5 rows of a dataframe?',
+         options:['df.show()','df.head()','df.top()','df.preview()'], answer:1},
+      ]
+    },
+    {
+      id:'cs-2', nsqf:'NSQF Level 5', title:'SQL — From Zero to Job-Ready',
+      desc:'Master SELECT, JOIN, GROUP BY and window functions used in real data jobs.',
+      xp:90, duration:'2.5 hrs', lessons:[
+        {id:'cs2-l1', title:'SQL Basics: SELECT, WHERE, ORDER BY',
+         videoId:'HXV3zeQKqGY',
+         content:'SQL is used in 95% of data analyst job descriptions. The SELECT statement is the foundation of all SQL queries.',
+         keypoints:['SELECT * FROM table — gets all columns','WHERE filters rows: WHERE age > 18','ORDER BY sorts: ORDER BY salary DESC','LIMIT restricts rows: LIMIT 10'],
+         resources:[{title:'SQLZoo Interactive Practice',url:'https://sqlzoo.net'}]},
+        {id:'cs2-l2', title:'JOINs — Combining Tables',
+         videoId:'9yeOJ0ZMUYw',
+         content:'JOINs are the most tested SQL concept in interviews. INNER JOIN returns matching rows, LEFT JOIN returns all rows from left table.',
+         keypoints:['INNER JOIN — only matching rows','LEFT JOIN — all from left + matching right','RIGHT JOIN — all from right + matching left','ON clause specifies the matching condition'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'Which SQL clause filters rows based on a condition?',
+         options:['SELECT','FROM','WHERE','ORDER BY'], answer:2},
+        {q:'Which JOIN returns all rows from the left table?',
+         options:['INNER JOIN','RIGHT JOIN','LEFT JOIN','FULL JOIN'], answer:2},
+      ]
+    },
+    {
+      id:'cs-3', nsqf:'NSQF Level 5', title:'Machine Learning Fundamentals',
+      desc:'Understand supervised learning, model training, and scikit-learn basics.',
+      xp:120, duration:'4 hrs', lessons:[
+        {id:'cs3-l1', title:'What is Machine Learning?',
+         videoId:'ukzFI9rgwfU',
+         content:'Machine learning is teaching computers to learn from data instead of explicit programming. There are 3 types: supervised, unsupervised, and reinforcement learning.',
+         keypoints:['Supervised: learn from labelled data','Unsupervised: find patterns in unlabelled data','Features are input variables (X)','Labels are output variables (y)'],
+         resources:[]},
+        {id:'cs3-l2', title:'Your First ML Model with Scikit-Learn',
+         videoId:'0B5eIE_1vpU',
+         content:'Scikit-learn makes building ML models 10x faster. The fit-predict pattern works for every algorithm.',
+         keypoints:['from sklearn.linear_model import LinearRegression','model = LinearRegression()','model.fit(X_train, y_train)','predictions = model.predict(X_test)'],
+         resources:[{title:'Scikit-Learn Docs',url:'https://scikit-learn.org/stable/'}]},
+      ],
+      quiz:[
+        {q:'What type of ML uses labelled training data?',
+         options:['Unsupervised','Reinforcement','Supervised','Deep'], answer:2},
+        {q:'Which method trains a scikit-learn model?',
+         options:['model.train()','model.fit()','model.learn()','model.run()'], answer:1},
+      ]
+    }
+  ],
+
+  engg: [
+    {
+      id:'engg-1', nsqf:'NSQF Level 4', title:'C Programming for Embedded Systems',
+      desc:'Master pointers, memory management and microcontroller programming in C.',
+      xp:100, duration:'3 hrs', lessons:[
+        {id:'engg1-l1', title:'Pointers and Memory in C',
+         videoId:'zuegQmMdy8M',
+         content:'Pointers are the most important concept in C for embedded programming. A pointer stores the memory address of another variable.',
+         keypoints:['int *ptr = &variable stores address','*ptr dereferences (reads the value)','malloc() allocates heap memory','free() releases memory — always pair with malloc'],
+         resources:[]},
+        {id:'engg1-l2', title:'GPIO and Microcontroller Basics',
+         videoId:'d8_xXNcGYgo',
+         content:'GPIO (General Purpose Input/Output) is the foundation of all embedded systems. Setting pins HIGH/LOW controls LEDs, motors, and sensors.',
+         keypoints:['DDRB = 0xFF sets all Port B pins as output','PORTB |= (1<<PB0) sets pin HIGH','PORTB &= ~(1<<PB0) sets pin LOW','_delay_ms(1000) waits 1 second'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'What does a pointer store?',
+         options:['A value','A memory address','A string','A function'], answer:1},
+        {q:'Which function allocates heap memory in C?',
+         options:['alloc()','new()','malloc()','create()'], answer:2},
+      ]
+    },
+    {
+      id:'engg-2', nsqf:'NSQF Level 5', title:'Cloud & DevOps for Engineers',
+      desc:'Learn AWS basics, Docker containers, and CI/CD pipelines.',
+      xp:110, duration:'3.5 hrs', lessons:[
+        {id:'engg2-l1', title:'AWS Core Services: EC2, S3, IAM',
+         videoId:'ulprqHHWlng',
+         content:'EC2 provides virtual servers, S3 stores files, IAM manages access control. These 3 services are used in 90% of AWS deployments.',
+         keypoints:['EC2 = Elastic Compute Cloud (virtual server)','S3 = Simple Storage Service (file storage)','IAM = Identity Access Management (permissions)','Regions and Availability Zones ensure uptime'],
+         resources:[{title:'AWS Free Tier',url:'https://aws.amazon.com/free/'}]},
+        {id:'engg2-l2', title:'Docker Containers from Zero',
+         videoId:'pTFZFxd5eq8',
+         content:'Docker packages your application with all its dependencies into a container that runs identically everywhere.',
+         keypoints:['docker build -t myapp . builds image','docker run -p 8080:80 myapp runs container','Dockerfile defines the environment','docker-compose manages multi-container apps'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'What does AWS S3 store?',
+         options:['Virtual servers','Files and objects','User permissions','Databases'], answer:1},
+        {q:'Which command builds a Docker image?',
+         options:['docker run','docker push','docker build','docker start'], answer:2},
+      ]
+    }
+  ],
+
+  medical: [
+    {
+      id:'med-1', nsqf:'NSQF Level 4', title:'Health Informatics Fundamentals',
+      desc:'Understand EHR systems, HL7 standards, and healthcare data workflows.',
+      xp:90, duration:'2.5 hrs', lessons:[
+        {id:'med1-l1', title:'Electronic Health Records (EHR) Basics',
+         videoId:null,
+         content:'EHR (Electronic Health Record) is a digital version of a patient\'s paper chart. It contains medical history, diagnoses, medications, treatment plans, immunisation dates, allergies, radiology images, and lab results.',
+         keypoints:['EHR vs EMR: EHR is shared across providers','Key EHR vendors: Epic, Cerner, Meditech','HL7 FHIR is the standard for data exchange','HIPAA governs patient data privacy in US (similar to India\'s DPDP Act)'],
+         resources:[{title:'HL7 FHIR Overview',url:'https://www.hl7.org/fhir/overview.html'}]},
+        {id:'med1-l2', title:'ICD-10 Medical Coding Introduction',
+         videoId:null,
+         content:'ICD-10 (International Classification of Diseases, 10th edition) is used to code diagnoses, symptoms and procedures for billing and statistics.',
+         keypoints:['ICD-10 codes have up to 7 characters','First character is always a letter','E.g. J06.9 = Acute upper respiratory infection','Clinical data engineers must understand coding for data quality'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'What does EHR stand for?',
+         options:['Electronic Health Record','Emergency Health Response','Electronic Hospital Report','External Health Registry'], answer:0},
+        {q:'Which standard is used for healthcare data exchange?',
+         options:['HTTP','HL7 FHIR','SQL','XML'], answer:1},
+      ]
+    },
+    {
+      id:'med-2', nsqf:'NSQF Level 5', title:'AI in Medical Diagnostics',
+      desc:'Learn how deep learning is transforming radiology, pathology and diagnostics.',
+      xp:120, duration:'3 hrs', lessons:[
+        {id:'med2-l1', title:'How AI Reads Medical Images',
+         videoId:'ACmydtFDTGs',
+         content:'Convolutional Neural Networks (CNNs) can detect cancer in X-rays with accuracy matching specialist radiologists. The key is training on large labelled datasets like ChestX-ray14.',
+         keypoints:['DICOM is the format for medical images','CNNs extract features automatically','Data augmentation increases training data','FDA requires clinical validation before deployment'],
+         resources:[]},
+        {id:'med2-l2', title:'DICOM Format and Medical Imaging Tools',
+         videoId:null,
+         content:'DICOM (Digital Imaging and Communications in Medicine) is the standard for medical imaging data. Understanding it is essential for any AI diagnostic role.',
+         keypoints:['Every DICOM file contains image + patient metadata','pydicom is the Python library for DICOM','SimpleITK handles 3D medical volumes','3D Slicer is free open-source medical imaging software'],
+         resources:[{title:'pydicom Documentation',url:'https://pydicom.github.io/'}]},
+      ],
+      quiz:[
+        {q:'What format are medical images stored in?',
+         options:['JPEG','PNG','DICOM','TIFF'], answer:2},
+        {q:'Which neural network architecture is used for image classification?',
+         options:['RNN','CNN','LSTM','GAN'], answer:1},
+      ]
+    }
+  ],
+
+  commerce: [
+    {
+      id:'comm-biz-1', nsqf:'NSQF Level 4', title:'Excel & Power BI for Business',
+      desc:'Master VLOOKUP, pivot tables, and build your first interactive dashboard.',
+      xp:80, duration:'2.5 hrs', lessons:[
+        {id:'biz1-l1', title:'Excel VLOOKUP, INDEX-MATCH & Pivot Tables',
+         videoId:'d3BYVQ6xIE4',
+         content:'VLOOKUP and Pivot Tables are the two most-tested Excel skills in business analyst interviews. Master these and you can handle 80% of business data tasks.',
+         keypoints:['=VLOOKUP(lookup_value, table, col_index, 0)','INDEX-MATCH is more flexible than VLOOKUP','Pivot Tables summarise thousands of rows in seconds','Always CTRL+T to format as Table first'],
+         resources:[]},
+        {id:'biz1-l2', title:'Power BI Dashboard in 30 Minutes',
+         videoId:'AGrl-H87pRU',
+         content:'Power BI transforms Excel data into interactive dashboards. Connect data, create visuals, publish reports — the core workflow takes under an hour to learn.',
+         keypoints:['Import data: Get Data → Excel/CSV','Drag fields onto canvas to create visuals','DAX formula: Total Sales = SUM(Sales[Amount])','Publish to Power BI Service for sharing'],
+         resources:[{title:'Microsoft Power BI Learn',url:'https://learn.microsoft.com/en-us/power-bi/'}]},
+      ],
+      quiz:[
+        {q:'What is the syntax start of a VLOOKUP formula?',
+         options:['=HLOOKUP(','=VLOOKUP(','=LOOKUP(','=FIND('], answer:1},
+        {q:'What does DAX stand for in Power BI?',
+         options:['Data Analysis Expressions','Digital Analytics Extension','Data Aggregate XML','Dynamic Analysis Exchange'], answer:0},
+      ]
+    }
+  ],
+
+  science: [
+    {
+      id:'sci-1', nsqf:'NSQF Level 5', title:'Python & R for Research',
+      desc:'Statistical analysis, data visualization and research workflows in Python and R.',
+      xp:100, duration:'3 hrs', lessons:[
+        {id:'sci1-l1', title:'Statistical Analysis with Python',
+         videoId:'r-txMSpNnMY',
+         content:'scipy.stats and statsmodels are the two main libraries for statistical analysis in Python. They cover everything from basic t-tests to complex regression.',
+         keypoints:['from scipy import stats','stats.ttest_ind(group1, group2)','p < 0.05 means statistically significant','import statsmodels.api as sm for regression'],
+         resources:[{title:'SciPy Documentation',url:'https://scipy.org/'}]},
+        {id:'sci1-l2', title:'R for Bioinformatics',
+         videoId:'_V8eKsto3Ug',
+         content:'R is the leading language for bioinformatics and statistical research. Bioconductor provides 2000+ biology-specific packages.',
+         keypoints:['library(dplyr) for data manipulation','ggplot2 creates publication-quality plots','BiocManager::install() installs bio packages','DESeq2 for RNA-seq differential expression'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'What p-value threshold is considered statistically significant?',
+         options:['p < 0.5','p < 0.05','p < 0.005','p < 5'], answer:1},
+        {q:'Which R library is used for bioinformatics packages?',
+         options:['CRAN','Bioconductor','tidyverse','ggplot2'], answer:1},
+      ]
+    }
+  ],
+
+  arts: [
+    {
+      id:'arts-1', nsqf:'NSQF Level 4', title:'Digital Marketing Essentials',
+      desc:'SEO, Google Ads, social media strategy and content marketing fundamentals.',
+      xp:80, duration:'2.5 hrs', lessons:[
+        {id:'arts1-l1', title:'SEO Fundamentals — Rank on Google',
+         videoId:'DvwS7cV9GmQ',
+         content:'SEO (Search Engine Optimisation) is the practice of getting web pages to rank higher on Google. On-page SEO focuses on content and keywords, off-page SEO focuses on backlinks.',
+         keypoints:['Keyword research: Google Keyword Planner is free','Title tag and H1 must contain primary keyword','Page speed is a ranking factor — aim for < 3 seconds','1 quality backlink > 100 low-quality ones'],
+         resources:[{title:'Google Search Console (Free)',url:'https://search.google.com/search-console'}]},
+        {id:'arts1-l2', title:'Content Marketing Strategy',
+         videoId:'YZT8iFJjTbg',
+         content:'Content marketing generates 3x more leads than outbound marketing at 62% less cost. The key is creating content that solves your audience\'s problems.',
+         keypoints:['Define your target audience first','Content pillar: 1 long post → 10 short posts','SEO + social + email = content distribution triangle','Measure: Traffic, time on page, conversions'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'What does SEO stand for?',
+         options:['Search Engine Operation','Search Engine Optimisation','Social Engagement Optimisation','Site Engagement Overview'], answer:1},
+        {q:'Content marketing generates how many times more leads than outbound?',
+         options:['1x','2x','3x','5x'], answer:2},
+      ]
+    }
+  ],
+
+  law: [
+    {
+      id:'law-1', nsqf:'NSQF Level 4', title:'Legal Tech & Compliance Fundamentals',
+      desc:'LegalTech tools, contract management, and compliance frameworks for modern lawyers.',
+      xp:80, duration:'2 hrs', lessons:[
+        {id:'law1-l1', title:'LegalTech Tools Every Lawyer Needs',
+         videoId:null,
+         content:'LegalTech is transforming the legal profession. Document automation, e-discovery, and contract analysis AI are now standard in top firms.',
+         keypoints:['DocuSign for e-signatures — legally binding in India','Relativity for e-discovery in litigation','Kira AI for contract review automation','Westlaw and LexisNexis for legal research'],
+         resources:[]},
+        {id:'law1-l2', title:'GDPR and India DPDP Act Compliance',
+         videoId:null,
+         content:'India\'s Digital Personal Data Protection Act 2023 is the country\'s first comprehensive data privacy law. Compliance roles are booming.',
+         keypoints:['DPDP Act applies to all digital personal data','Data Fiduciary = organisation collecting data','Consent is mandatory before processing','Penalty: up to ₹250 crore for violations'],
+         resources:[]},
+      ],
+      quiz:[
+        {q:'What is the maximum penalty under India\'s DPDP Act?',
+         options:['₹10 crore','₹50 crore','₹250 crore','₹500 crore'], answer:2},
+        {q:'Which tool is used for e-signatures?',
+         options:['Relativity','DocuSign','Kira','Westlaw'], answer:1},
+      ]
+    }
+  ]
+};
+
+// ─── Current lesson state ──────────────────────────────────────────────────
+var CL = { moduleId:null, lessonIdx:0, module:null };
+
+// ─── Get modules for current user ─────────────────────────────────────────
+function getUserModules(){
+  var field = (APP.user&&APP.user.profile&&APP.user.profile.field)||'other';
+  var fieldMods = LEARN_MODULES[field] || LEARN_MODULES['cs'] || [];
+  // Always include common modules
+  return [...LEARN_MODULES.common, ...fieldMods];
+}
+
+// ─── Count completed lessons in a module ──────────────────────────────────
+function moduleCompletedCount(mod){
+  return mod.lessons.filter(function(l){ return APP.learnProgress[l.id]; }).length;
+}
+
+// ─── Save progress to localStorage + backend ──────────────────────────────
+function saveLearnProgress(){
+  localStorage.setItem('pf_learn', JSON.stringify(APP.learnProgress));
+  localStorage.setItem('pf_xp', APP.learnXP);
+  // Update XP badge in sidebar
+  var badge = document.getElementById('learn-xp-badge');
+  if(badge) badge.textContent = APP.learnXP + ' XP';
+  var disp = document.getElementById('learn-xp-display');
+  if(disp) disp.textContent = APP.learnXP + ' XP earned';
+}
+
+// ─── Render the learn page ─────────────────────────────────────────────────
+function renderLearnPage(){
+  var modules = getUserModules();
+  var field = (APP.user&&APP.user.profile&&APP.user.profile.field)||'other';
+  var FM = {cs:'Computer Science',engg:'Engineering',medical:'Medical / Health Tech',
+            commerce:'Commerce & Business',science:'Sciences',arts:'Arts & Media',
+            law:'Law',other:'Your Field'};
+
+  // Update subtitle
+  var sub = document.getElementById('learn-page-sub');
+  if(sub) sub.textContent = 'AI-curated lessons for ' + (FM[field]||'your field') + ' — learn at your own pace';
+
+  // Total progress
+  var totalLessons = modules.reduce(function(s,m){return s+m.lessons.length;},0);
+  var doneLessons  = modules.reduce(function(s,m){return s+moduleCompletedCount(m);},0);
+  var pct = totalLessons ? Math.round(doneLessons/totalLessons*100) : 0;
+  var bar = document.getElementById('learn-overall-bar');
+  var pctEl = document.getElementById('learn-overall-pct');
+  if(bar) setTimeout(function(){bar.style.width=pct+'%';},100);
+  if(pctEl) pctEl.textContent = pct + '%';
+
+  // Badges
+  renderLearnBadges(pct, doneLessons);
+
+  // Module cards
+  var grid = document.getElementById('learn-modules-grid');
+  if(!grid) return;
+  var prevDone = true; // first module always unlocked
+  grid.innerHTML = modules.map(function(mod, idx){
+    var done = moduleCompletedCount(mod);
+    var total = mod.lessons.length;
+    var modPct = total ? Math.round(done/total*100) : 0;
+    var isComplete = done === total;
+    var isLocked = false; // no locking — all accessible
+
+    return '<div class="learn-module-card'+(isComplete?' completed':'')+'" onclick="openModule(\''+mod.id+'\')">'+
+      '<div class="lm-tag">'+mod.nsqf+' · '+mod.duration+' · '+mod.xp+' XP</div>'+
+      '<div class="lm-title">'+(isComplete?'✅ ':'')+mod.title+'</div>'+
+      '<div class="lm-desc">'+mod.desc+'</div>'+
+      '<div class="lm-meta">'+
+        '<span class="lm-badge">📖 '+total+' lessons</span>'+
+        '<span class="lm-badge">🧠 Quiz included</span>'+
+        (isComplete?'<span class="lm-badge" style="color:var(--green);border-color:rgba(77,216,154,.3)">✓ Complete</span>':
+          done>0?'<span class="lm-badge" style="color:var(--gold);border-color:rgba(244,185,66,.3)">'+done+'/'+total+' done</span>':'')+
+      '</div>'+
+      '<div class="lm-progress-track"><div class="lm-progress-fill" style="width:'+modPct+'%"></div></div>'+
+      '<div class="lm-progress-label"><span>'+done+' / '+total+' lessons</span><span style="color:var(--gold)">'+modPct+'%</span></div>'+
+      '<button class="btn-primary" style="margin-top:14px;padding:9px 20px;font-size:13px;">'+
+        (done===0?'Start Learning →':isComplete?'Review Module →':'Continue →')+
+      '</button>'+
+    '</div>';
+  }).join('');
+}
+
+function renderLearnBadges(pct, doneLessons){
+  var row = document.getElementById('learn-badges-row');
+  if(!row) return;
+  var badges = [];
+  if(doneLessons >= 1)  badges.push({icon:'🌱',label:'First Lesson'});
+  if(doneLessons >= 5)  badges.push({icon:'🔥',label:'5 Lessons Done'});
+  if(doneLessons >= 10) badges.push({icon:'⚡',label:'10 Lessons Done'});
+  if(pct >= 25)         badges.push({icon:'🥉',label:'25% Complete'});
+  if(pct >= 50)         badges.push({icon:'🥈',label:'Halfway There'});
+  if(pct >= 100)        badges.push({icon:'🏆',label:'Course Complete'});
+  if(APP.learnXP >= 100) badges.push({icon:'💎',label:'100 XP Earned'});
+  if(APP.learnXP >= 500) badges.push({icon:'👑',label:'500 XP Legend'});
+  row.innerHTML = badges.length
+    ? badges.map(function(b){return'<span class="learn-badge">'+b.icon+' '+b.label+'</span>';}).join('')
+    : '<span style="font-size:13px;color:var(--muted);">Complete your first lesson to earn badges!</span>';
+}
+
+// ─── Open a module ────────────────────────────────────────────────────────
+function openModule(moduleId){
+  var modules = getUserModules();
+  var mod = modules.find(function(m){return m.id===moduleId;});
+  if(!mod) return;
+  CL.moduleId = moduleId;
+  CL.module = mod;
+  // Open at first uncompleted lesson, or first lesson
+  var firstUndone = mod.lessons.findIndex(function(l){return !APP.learnProgress[l.id];});
+  CL.lessonIdx = firstUndone >= 0 ? firstUndone : 0;
+  showLessonViewer();
+  openLesson(CL.lessonIdx);
+}
+
+// ─── Show/hide lesson viewer ───────────────────────────────────────────────
+function showLessonViewer(){
+  document.getElementById('learn-modules-grid').style.display = 'none';
+  document.querySelector('#page-learn > .page-header').style.display = 'none';
+  document.querySelector('#page-learn > div:nth-child(2)').style.display = 'none'; // progress bar
+  document.getElementById('lesson-viewer').style.display = 'block';
+}
+
+function closeLessonViewer(){
+  document.getElementById('lesson-viewer').style.display = 'none';
+  document.getElementById('learn-modules-grid').style.display = 'grid';
+  document.querySelector('#page-learn > .page-header').style.display = 'flex';
+  document.querySelector('#page-learn > div:nth-child(2)').style.display = 'block';
+  renderLearnPage(); // refresh progress
+}
+
+// ─── Open a specific lesson ────────────────────────────────────────────────
+function openLesson(idx){
+  var mod = CL.module;
+  if(!mod || idx < 0 || idx >= mod.lessons.length) return;
+  CL.lessonIdx = idx;
+  var lesson = mod.lessons[idx];
+
+  // Breadcrumb
+  var bc = document.getElementById('lesson-viewer-breadcrumb');
+  if(bc) bc.textContent = mod.title + ' → Lesson '+(idx+1)+' of '+mod.lessons.length;
+
+  // Video
+  var iframe = document.getElementById('lesson-video');
+  var placeholder = document.getElementById('lesson-video-placeholder');
+  if(lesson.videoId){
+    iframe.src = 'https://www.youtube.com/embed/'+lesson.videoId+'?rel=0';
+    iframe.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    iframe.src = '';
+    iframe.style.display = 'none';
+    placeholder.style.display = 'flex';
+  }
+
+  // NSQF tag, title, desc
+  document.getElementById('lesson-nsqf-tag').textContent = mod.nsqf;
+  document.getElementById('lesson-title').textContent = lesson.title;
+  document.getElementById('lesson-desc').textContent = lesson.content;
+
+  // Key points
+  var kpEl = document.getElementById('lesson-keypoints');
+  if(lesson.keypoints && lesson.keypoints.length){
+    kpEl.innerHTML = '<div style="font-family:\'Syne\',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;color:var(--accent);">🔑 Key Points</div>'+
+      lesson.keypoints.map(function(k){return'<div class="keypoint-item">'+k+'</div>';}).join('');
+  } else { kpEl.innerHTML = ''; }
+
+  // Resources
+  var resEl = document.getElementById('lesson-resources');
+  if(lesson.resources && lesson.resources.length){
+    resEl.innerHTML = '<div style="font-family:\'Syne\',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px;color:var(--accent2);">📎 Resources</div>'+
+      lesson.resources.map(function(r){
+        return '<a href="'+r.url+'" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(92,225,200,.1);border:1px solid rgba(92,225,200,.2);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--accent2);text-decoration:none;margin-right:8px;">🔗 '+r.title+'</a>';
+      }).join('');
+  } else { resEl.innerHTML = ''; }
+
+  // XP badge
+  document.getElementById('lesson-xp').textContent = Math.round(mod.xp / mod.lessons.length);
+
+  // Complete button state
+  var isDone = !!APP.learnProgress[lesson.id];
+  document.getElementById('lesson-complete-btn').style.display = isDone ? 'none' : 'inline-block';
+  document.getElementById('lesson-already-done').style.display = isDone ? 'block' : 'none';
+
+  // Quiz — only show on last lesson
+  var isLastLesson = idx === mod.lessons.length - 1;
+  var quizWrap = document.getElementById('lesson-quiz-wrap');
+  if(isLastLesson && mod.quiz && mod.quiz.length){
+    quizWrap.style.display = 'block';
+    renderQuiz(mod.quiz);
+  } else {
+    quizWrap.style.display = 'none';
+  }
+
+  // Module sidebar list
+  renderModuleSidebar(mod, idx);
+}
+
+// ─── Render module lesson list in sidebar ─────────────────────────────────
+function renderModuleSidebar(mod, activeIdx){
+  var title = document.getElementById('module-sidebar-title');
+  if(title) title.textContent = mod.title;
+  var list = document.getElementById('module-lessons-list');
+  if(!list) return;
+  list.innerHTML = mod.lessons.map(function(l, i){
+    var done = !!APP.learnProgress[l.id];
+    var active = i === activeIdx;
+    return '<div class="lesson-list-item'+(active?' active':'')+(done?' done':'')+'" onclick="openLesson('+i+')">'+
+      '<div class="lesson-dot'+(done?' done':active?' active':'')+'"></div>'+
+      '<span style="flex:1">'+(i+1)+'. '+l.title+'</span>'+
+      (done?'<span style="color:var(--green);font-size:11px;">✓</span>':'')+
+    '</div>';
+  }).join('');
+  // Module progress
+  var done = moduleCompletedCount(mod);
+  var pct = Math.round(done/mod.lessons.length*100);
+  var pb = document.getElementById('module-progress-bar');
+  var pt = document.getElementById('module-progress-text');
+  if(pb) setTimeout(function(){pb.style.width=pct+'%';},100);
+  if(pt) pt.textContent = done+' of '+mod.lessons.length+' lessons done';
+}
+
+// ─── Render quiz ───────────────────────────────────────────────────────────
+function renderQuiz(questions){
+  var el = document.getElementById('quiz-questions');
+  if(!el) return;
+  document.getElementById('quiz-result').style.display = 'none';
+  el.innerHTML = questions.map(function(q,qi){
+    return '<div class="quiz-question">'+
+      '<div class="quiz-q-text">'+(qi+1)+'. '+q.q+'</div>'+
+      q.options.map(function(opt,oi){
+        return '<label class="quiz-option">'+
+          '<input type="radio" name="q'+qi+'" value="'+oi+'">'+opt+
+        '</label>';
+      }).join('')+
+    '</div>';
+  }).join('');
+}
+
+function submitQuiz(){
+  var mod = CL.module;
+  if(!mod || !mod.quiz) return;
+  var correct = 0;
+  mod.quiz.forEach(function(q,qi){
+    var sel = document.querySelector('input[name="q'+qi+'"]:checked');
+    var opts = document.querySelectorAll('input[name="q'+qi+'"]');
+    opts.forEach(function(opt,oi){
+      var label = opt.parentElement;
+      if(oi === q.answer) label.classList.add('correct');
+      else if(sel && +sel.value === oi) label.classList.add('wrong');
+      opt.disabled = true;
+    });
+    if(sel && +sel.value === q.answer) correct++;
+  });
+  var pct = Math.round(correct/mod.quiz.length*100);
+  var res = document.getElementById('quiz-result');
+  res.style.display = 'block';
+  res.innerHTML = '<div style="padding:16px;border-radius:12px;background:'+(pct>=60?'rgba(77,216,154,.1)':'rgba(255,87,87,.1)')+';border:1px solid '+(pct>=60?'rgba(77,216,154,.3)':'rgba(255,87,87,.3)')+';">'+
+    '<div style="font-family:\'Syne\',sans-serif;font-size:18px;font-weight:800;color:'+(pct>=60?'var(--green)':'var(--red)')+'">'+
+    (pct>=60?'🎉 Great job! ':'😅 Keep studying! ')+correct+' / '+mod.quiz.length+' correct ('+pct+'%)</div>'+
+    '<div style="font-size:13px;color:var(--muted);margin-top:4px;">'+
+    (pct>=60?'You\'re ready to mark this module complete!':'Review the key points and try again.')+
+    '</div></div>';
+  if(pct>=60) toast('🎉','Quiz passed! Mark the lesson complete for XP.');
+  else toast('📖','Review the material and try again!');
+}
+
+// ─── Mark lesson complete ──────────────────────────────────────────────────
+function completeLesson(){
+  var mod = CL.module;
+  if(!mod) return;
+  var lesson = mod.lessons[CL.lessonIdx];
+  if(APP.learnProgress[lesson.id]) return; // already done
+
+  // Award XP
+  var xpEarned = Math.round(mod.xp / mod.lessons.length);
+  APP.learnProgress[lesson.id] = { done:true, ts: Date.now() };
+  APP.learnXP += xpEarned;
+  saveLearnProgress();
+
+  // Update UI
+  document.getElementById('lesson-complete-btn').style.display = 'none';
+  document.getElementById('lesson-already-done').style.display = 'block';
+  toast('✅', '+'+xpEarned+' XP! Lesson complete 🎓');
+
+  // Check if full module done
+  var allDone = mod.lessons.every(function(l){ return !!APP.learnProgress[l.id]; });
+  if(allDone){
+    toast('🏆', mod.title+' module complete! +'+mod.xp+' total XP!');
+    // Mark the linked skill as completed in skill tracker
+    try{
+      var skillName = mod.title.split('—')[0].trim().split(':')[0].trim();
+      APP.skillStates[skillName] = 'completed';
+      api('/user/skills',{method:'PATCH',body:JSON.stringify({[skillName]:'completed'})}).catch(function(){});
+    }catch(e){}
+  }
+
+  // Auto-advance to next lesson
+  var nextIdx = CL.lessonIdx + 1;
+  if(nextIdx < mod.lessons.length){
+    setTimeout(function(){
+      openLesson(nextIdx);
+      renderModuleSidebar(mod, nextIdx);
+    }, 800);
+  } else {
+    renderModuleSidebar(mod, CL.lessonIdx);
+  }
+}
+
+// Career ID → backend career ID mapping for salary calculator
+var CAREER_ID_MAP = {
+  1:'Data Analyst', 2:'BI Analyst', 3:'AI/ML Engineer', 4:'Data Engineer',
+  5:'Product Analyst', 6:'IT Systems Analyst', 7:'Digital Marketing Analyst',
+  8:'QA Test Analyst', 9:'Govt Data Officer', 10:'Cloud Architect',
+  11:'Healthcare Data Analyst', 12:'Freelance Consultant',
+  13:'Health Informatics Eng', 14:'Medical Device SW Eng',
+  15:'Clinical Data Engineer', 16:'AI Diagnostics Engineer',
+  17:'Telemedicine Developer', 18:'Biomedical AI Researcher'
 };
 
 // ─────────────────────────────────────────
@@ -129,7 +966,14 @@ function switchPage(id,el){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   if(el){document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});el.classList.add('active');}
-  if(id==='market')  setTimeout(buildMarketCharts,100);
+  if(id==='market'){
+  var field=(APP.user&&APP.user.profile&&APP.user.profile.field)||'other';
+  var FM={cs:'Computer Science',engg:'Engineering',medical:'Medical & Health Tech',commerce:'Commerce & Business',science:'Sciences',arts:'Arts & Humanities',law:'Law',other:'All Fields'};
+  var mSub=document.querySelector('#page-market .page-sub');
+  if(mSub) mSub.textContent='Job demand & salary insights for '+( FM[field]||'your field');
+  setTimeout(buildMarketCharts,100);
+}
+if(id==='learn') { renderLearnPage(); }
   if(id==='skills')  setTimeout(buildSkillsChart,100);
   if(id==='overview')setTimeout(buildRadarChart,100);
   if(id==='salary')  setTimeout(function(){loadSalaryData();buildGrowthChart();},100);
@@ -164,9 +1008,10 @@ async function handleRegister(){
   var name=document.getElementById('reg-name').value.trim();
   var email=document.getElementById('reg-email').value.trim();
   var password=document.getElementById('reg-pwd').value;
-  if(!name||!email||!password){toast('⚠️','Please fill all fields.');return;}
+  var phone=document.getElementById('reg-phone')?.value.trim()||'';
+  if(!name||!email||!password||!phone){toast('⚠️','Please fill all fields.');return;}
   try{
-    var data=await api('/auth/register',{method:'POST',body:JSON.stringify({name,email,password})});
+    var data=await api('/auth/register',{method:'POST',body:JSON.stringify({name,email,password,phone})});
     APP.token=data.token; APP.user=data.user; APP.skillStates={};
     localStorage.setItem('pf_token',data.token);
     showScreen('onboarding');initSteps();toast('🎉','Account created! Let\'s build your profile.');
@@ -177,6 +1022,33 @@ function demoLogin(){
   document.getElementById('login-email').value='priya@example.com';
   document.getElementById('login-pwd').value='password';
   handleLogin();
+}
+
+// ─────────────────────────────────────────
+// GOOGLE SIGN-IN
+// ─────────────────────────────────────────
+async function handleGoogleLogin(response) {
+  try {
+    toast('⏳', 'Signing in with Google...');
+    var data = await api('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential: response.credential })
+    });
+    APP.token = data.token;
+    APP.user = data.user;
+    APP.skillStates = data.user.skillStates || {};
+    localStorage.setItem('pf_token', data.token);
+    toast('🎉', 'Welcome, ' + data.user.name + '!');
+    if (data.user.hasProfile) {
+      await loadAllData();
+      launchDashboard();
+    } else {
+      showScreen('onboarding');
+      initSteps();
+    }
+  } catch(e) {
+    toast('⚠️', 'Google sign-in failed: ' + e.message);
+  }
 }
 
 function handleLogout(){
@@ -191,10 +1063,24 @@ function handleLogout(){
 var currentStep=1;
 document.querySelectorAll('.chip').forEach(function(c){c.addEventListener('click',function(){c.classList.toggle('selected');});});
 
-function initSteps(){currentStep=1;updateProgress();for(var i=1;i<=5;i++)document.getElementById('step-'+i).style.display=i===1?'block':'none';}
-function updateProgress(){var bar=document.getElementById('step-progress');bar.innerHTML='';for(var i=1;i<=5;i++){var d=document.createElement('div');d.className='step-dot'+(i<currentStep?' done':i===currentStep?' active':'');bar.appendChild(d);}var lbl=document.createElement('div');lbl.className='step-label';lbl.textContent=currentStep+'/5';bar.appendChild(lbl);}
-function nextStep(n){document.getElementById('step-'+currentStep).style.display='none';currentStep=n;document.getElementById('step-'+n).style.display='block';updateProgress();window.scrollTo(0,0);}
+function initSteps(){currentStep=0;updateProgress();for(var i=0;i<=5;i++){var el=document.getElementById('step-'+i);if(el)el.style.display=i===0?'block':'none';}}
+function updateProgress(){var bar=document.getElementById('step-progress');if(!bar)return;bar.innerHTML='';var dStep=currentStep===0?1:currentStep;for(var i=1;i<=5;i++){var d=document.createElement('div');d.className='step-dot'+(i<dStep?' done':i===dStep?' active':'');bar.appendChild(d);}var lbl=document.createElement('div');lbl.className='step-label';lbl.textContent=(dStep)+'/5';bar.appendChild(lbl);}
+function nextStep(n){var curr=document.getElementById('step-'+currentStep);if(curr)curr.style.display='none';currentStep=n;var nxt=document.getElementById('step-'+n);if(nxt)nxt.style.display='block';updateProgress();window.scrollTo(0,0);}
 function getChips(id){return Array.from(document.querySelectorAll('#'+id+' .chip.selected')).map(function(c){return c.getAttribute('data-val');});}
+
+async function handleResumeUpload(){
+  var file=document.getElementById('resume-file').files[0];
+  if(!file)return;
+  document.getElementById('resume-upload-zone').innerHTML='<div style="font-size:2em;margin-bottom:10px;">⏳</div><div>Analyzing Resume with AI...</div>';
+  setTimeout(function(){
+    toast('✨','Resume parsed successfully!');
+    // Auto-fill some default values for the demo
+    document.getElementById('field').value='cs';
+    document.getElementById('qualification').value='ug';
+    nextStep(1);
+    document.getElementById('resume-upload-zone').innerHTML='<div style="font-size:2em;margin-bottom:10px;">📄</div><div>Click to upload or drag and drop</div><div style="font-size:12px;color:var(--muted);margin-top:5px;">PDF, DOC, DOCX (Max 5MB)</div><input type="file" id="resume-file" accept=".pdf,.doc,.docx" style="display:none" onchange="handleResumeUpload()">';
+  },1500);
+}
 
 // ─────────────────────────────────────────
 // DYNAMIC SKILLS BASED ON FIELD
@@ -204,22 +1090,26 @@ var FIELD_CONFIG = {
     sub: 'Rate your proficiency in Computer Science & IT skills',
     labels: { prog:'Programming', data:'Data Analysis', comm:'Communication', prob:'Problem Solving', tech:'Technical Skills' },
     defaults: { prog:60, data:40, comm:60, prob:70, tech:50 },
-    toolsLabel: 'Tools & Technologies you know',
+    toolsLabel: 'Languages & Technologies you know',
     tools: [
-      {val:'Python',sel:false},{val:'SQL',sel:false},{val:'Java',sel:false},
-      {val:'React',sel:false},{val:'Excel',sel:true},{val:'Statistics',sel:true},
-      {val:'Power BI',sel:false},{val:'Cloud',sel:false},{val:'ML',sel:false},{val:'Git',sel:false}
+      {val:'Python',sel:false},{val:'Java',sel:false},{val:'C',sel:false},
+      {val:'C++',sel:false},{val:'JavaScript',sel:false},{val:'SQL',sel:false},
+      {val:'React',sel:false},{val:'Node.js',sel:false},{val:'Git',sel:false},
+      {val:'Excel',sel:true},{val:'Power BI',sel:false},{val:'Cloud',sel:false},
+      {val:'ML',sel:false},{val:'Docker',sel:false},{val:'Linux',sel:false}
     ]
   },
   engg: {
     sub: 'Rate your proficiency in Engineering skills',
     labels: { prog:'Programming / Coding', data:'Data & Analysis', comm:'Communication', prob:'Problem Solving', tech:'Technical / Domain Skills' },
     defaults: { prog:50, data:40, comm:60, prob:70, tech:60 },
-    toolsLabel: 'Engineering Tools you know',
+    toolsLabel: 'Engineering Tools & Languages you know',
     tools: [
-      {val:'AutoCAD',sel:false},{val:'MATLAB',sel:false},{val:'Python',sel:false},
-      {val:'Excel',sel:true},{val:'Statistics',sel:true},{val:'CAD Software',sel:false},
-      {val:'Circuit Design',sel:false},{val:'Project Management',sel:false},{val:'SQL',sel:false},{val:'Cloud',sel:false}
+      {val:'C',sel:false},{val:'C++',sel:false},{val:'Python',sel:false},
+      {val:'MATLAB',sel:false},{val:'AutoCAD',sel:false},{val:'SolidWorks',sel:false},
+      {val:'Excel',sel:true},{val:'Statistics',sel:true},{val:'Embedded Systems',sel:false},
+      {val:'PLC Programming',sel:false},{val:'Circuit Design',sel:false},{val:'CAD Software',sel:false},
+      {val:'SQL',sel:false},{val:'Cloud',sel:false},{val:'Project Management',sel:false}
     ]
   },
   commerce: {
@@ -230,7 +1120,9 @@ var FIELD_CONFIG = {
     tools: [
       {val:'Excel',sel:true},{val:'Tally',sel:false},{val:'Statistics',sel:true},
       {val:'Power BI',sel:false},{val:'Google Analytics',sel:false},{val:'SQL',sel:false},
-      {val:'Accounting Software',sel:false},{val:'MS Office',sel:true},{val:'CRM Tools',sel:false},{val:'Tableau',sel:false}
+      {val:'Accounting Software',sel:false},{val:'MS Office',sel:true},{val:'CRM Tools',sel:false},
+      {val:'Tableau',sel:false},{val:'Python',sel:false},{val:'QuickBooks',sel:false},
+      {val:'SAP',sel:false},{val:'Salesforce',sel:false},{val:'Financial Modeling',sel:false}
     ]
   },
   science: {
@@ -240,8 +1132,10 @@ var FIELD_CONFIG = {
     toolsLabel: 'Science & Research Tools you know',
     tools: [
       {val:'Python',sel:false},{val:'R Programming',sel:false},{val:'SPSS',sel:false},
-      {val:'Excel',sel:true},{val:'Statistics',sel:true},{val:'MATLAB',sel:false},
-      {val:'Lab Equipment',sel:false},{val:'LaTeX',sel:false},{val:'SQL',sel:false},{val:'Tableau',sel:false}
+      {val:'MATLAB',sel:false},{val:'Excel',sel:true},{val:'Statistics',sel:true},
+      {val:'C',sel:false},{val:'Lab Equipment',sel:false},{val:'LaTeX',sel:false},
+      {val:'SQL',sel:false},{val:'Tableau',sel:false},{val:'Jupyter Notebook',sel:false},
+      {val:'Bioinformatics Tools',sel:false},{val:'ImageJ',sel:false},{val:'Origin',sel:false}
     ]
   },
   arts: {
@@ -252,7 +1146,9 @@ var FIELD_CONFIG = {
     tools: [
       {val:'MS Office',sel:true},{val:'Google Workspace',sel:true},{val:'Social Media',sel:false},
       {val:'Content Writing',sel:false},{val:'Canva',sel:false},{val:'WordPress',sel:false},
-      {val:'Excel',sel:false},{val:'Photography',sel:false},{val:'Video Editing',sel:false},{val:'SEO',sel:false}
+      {val:'Excel',sel:false},{val:'Photography',sel:false},{val:'Video Editing',sel:false},
+      {val:'SEO',sel:false},{val:'Adobe Photoshop',sel:false},{val:'Figma',sel:false},
+      {val:'Premiere Pro',sel:false},{val:'Copywriting',sel:false},{val:'Public Speaking',sel:false}
     ]
   },
   medical: {
@@ -262,8 +1158,10 @@ var FIELD_CONFIG = {
     toolsLabel: 'Medical & Healthcare Tools you know',
     tools: [
       {val:'MS Office',sel:true},{val:'Excel',sel:true},{val:'HMIS Systems',sel:false},
-      {val:'Medical Coding',sel:false},{val:'Statistics',sel:false},{val:'EHR Software',sel:false},
-      {val:'Lab Equipment',sel:false},{val:'SQL',sel:false},{val:'Power BI',sel:false},{val:'Python',sel:false}
+      {val:'Medical Coding ICD-10',sel:false},{val:'Statistics',sel:false},{val:'EHR Software',sel:false},
+      {val:'Lab Equipment',sel:false},{val:'SQL',sel:false},{val:'Power BI',sel:false},
+      {val:'Python',sel:false},{val:'R Programming',sel:false},{val:'SPSS',sel:false},
+      {val:'HL7 FHIR',sel:false},{val:'DICOM',sel:false},{val:'SAS',sel:false}
     ]
   },
   law: {
@@ -274,7 +1172,9 @@ var FIELD_CONFIG = {
     tools: [
       {val:'MS Office',sel:true},{val:'Legal Research Tools',sel:false},{val:'Excel',sel:true},
       {val:'Case Management Software',sel:false},{val:'Documentation',sel:false},{val:'Google Workspace',sel:true},
-      {val:'Statistics',sel:false},{val:'Presentation Tools',sel:false},{val:'Database Research',sel:false},{val:'Contract Drafting',sel:false}
+      {val:'Statistics',sel:false},{val:'Presentation Tools',sel:false},{val:'Contract Drafting',sel:false},
+      {val:'LexisNexis',sel:false},{val:'Westlaw',sel:false},{val:'Compliance Tools',sel:false},
+      {val:'SQL',sel:false},{val:'Python',sel:false},{val:'Canva',sel:false}
     ]
   },
   other: {
@@ -284,11 +1184,14 @@ var FIELD_CONFIG = {
     toolsLabel: 'Tools & Skills you know',
     tools: [
       {val:'MS Office',sel:true},{val:'Excel',sel:true},{val:'Google Workspace',sel:true},
-      {val:'Communication',sel:false},{val:'Social Media',sel:false},{val:'Statistics',sel:false},
-      {val:'Python',sel:false},{val:'SQL',sel:false},{val:'Canva',sel:false},{val:'Project Management',sel:false}
+      {val:'Python',sel:false},{val:'SQL',sel:false},{val:'Canva',sel:false},
+      {val:'Social Media',sel:false},{val:'Statistics',sel:false},{val:'Project Management',sel:false},
+      {val:'C',sel:false},{val:'C++',sel:false},{val:'Communication',sel:false},
+      {val:'Video Editing',sel:false},{val:'WordPress',sel:false},{val:'Figma',sel:false}
     ]
   }
 };
+  
 
 function goToSkills() {
   var field = document.getElementById('field').value || 'cs';
@@ -368,6 +1271,7 @@ async function submitProfile(){
 // ─────────────────────────────────────────
 // LOAD ALL DATA FROM BACKEND
 // ─────────────────────────────────────────
+
 async function loadAllData(){
   try{
     var [careersData, skillsData, roadmapData, coursesData, marketData, tipData] = await Promise.all([
@@ -378,28 +1282,46 @@ async function loadAllData(){
       api('/market'),
       api('/tips')
     ]);
-    APP.careers   = careersData.careers;
-    APP.skillGaps = { have: skillsData.have||[], need: skillsData.need||[], learning: skillsData.learning||[] };
-    APP.matchScore= skillsData.match_score || 85;
-    APP.topCareerName = skillsData.career ? skillsData.career.name : 'Data Analyst';
+    APP.careers    = careersData.careers;
+    APP.skillGaps  = { have: skillsData.have||[], need: skillsData.need||[], learning: skillsData.learning||[] };
+    APP.matchScore = skillsData.match_score || 85;
+    APP.topCareerName = skillsData.career ? skillsData.career.name : 'Career';
     APP.topCareerId   = skillsData.career ? skillsData.career.id  : 1;
-    APP.roadmap   = roadmapData.roadmap;
-    APP.courses   = coursesData.courses;
-    APP.market    = marketData;
-    APP.dailyTip  = tipData.tip;
+    APP.roadmap    = roadmapData.roadmap;
+    APP.courses    = coursesData.courses;
+    APP.market     = marketData;
+    APP.dailyTip   = tipData.tip;
+
+    // ── Inject field-specific market data ──────────────────────────────
+    var field = (APP.user && APP.user.profile && APP.user.profile.field) || 'other';
+    var fd = FIELD_DATA[field] || FIELD_DATA['other'];
+    // Override market insights and whatsNew with field-relevant data
+    APP.market.insights = fd.insights;
+    APP.market.whatsNew = fd.whatsNew;
+    APP.market.trends.demandLabels = fd.demandLabels;
+    APP.market.trends.demandValues = fd.demandValues;
+    APP.market.trends.salaryRoles  = fd.salaryRoles;
+    APP.market.trends.salaryMin    = fd.salaryMin;
+    APP.market.trends.salaryMax    = fd.salaryMax;
+    APP.fieldData = fd;
+    // ──────────────────────────────────────────────────────────────────
+
   }catch(e){
     console.warn('Backend unreachable, using fallback:', e.message);
     useFallbackData();
   }
 }
-
 // ─────────────────────────────────────────
 // LAUNCH DASHBOARD
 // ─────────────────────────────────────────
 function launchDashboard(){
   var u=APP.user, name=u?u.name:'Learner', first=name.split(' ')[0];
   var returning=!!(u&&u.hasProfile);
-
+  // Restore XP badge
+var badge = document.getElementById('learn-xp-badge');
+if(badge) badge.textContent = APP.learnXP + ' XP';
+var disp = document.getElementById('learn-xp-display');
+if(disp) disp.textContent = APP.learnXP + ' XP earned';
   document.getElementById('welcome-title').textContent=(returning?'Welcome back, ':'Welcome, ')+first+' 👋';
   document.getElementById('sidebar-name').textContent=name;
   document.getElementById('sidebar-avatar').textContent=first[0];
@@ -588,24 +1510,30 @@ function renderHeatmap(){
 var salaryData = null;
 
 async function loadSalaryData(){
-  var role=document.getElementById('calc-role')?.value||'da';
-  var city=document.getElementById('calc-city')?.value||'bangalore';
-  // Map role dropdown value to career id
-  var roleMap={da:1,bi:2,ds:3,ml:3,de:4,ca:10};
-  var careerId=roleMap[role]||1;
+  var field = (APP.user && APP.user.profile && APP.user.profile.field) || 'other';
+  var fd = FIELD_DATA[field] || FIELD_DATA['other'];
+
+  // Rebuild the role dropdown based on field of study
+  var roleSelect = document.getElementById('calc-role');
+  if(roleSelect){
+    roleSelect.innerHTML = fd.careerIds.map(function(id){
+      return '<option value="'+id+'">'+(CAREER_ID_MAP[id]||'Role '+id)+'</option>';
+    }).join('');
+  }
+
+  var careerId = roleSelect ? roleSelect.value : fd.careerIds[0];
+  var city = document.getElementById('calc-city')?.value || 'bangalore';
   try{
-    var data=await api('/salary?career_id='+careerId+'&city='+city);
-    salaryData=data;
+    var data = await api('/salary?career_id='+careerId+'&city='+city);
+    salaryData = data;
     renderSalaryResult(data);
     renderSalaryBreakdown(data);
-    if(APP.charts.growth){APP.charts.growth.destroy();delete APP.charts.growth;}
+    if(APP.charts.growth){APP.charts.growth.destroy(); delete APP.charts.growth;}
     buildGrowthChart(data.growth_projection);
-    // Populate all roles comparison
-    if(data.all_roles && APP.charts.salaryChart){
-      APP.charts.salaryChart.destroy(); delete APP.charts.salaryChart;
-    }
   }catch(e){calcSalaryFallback();}
 }
+
+
 
 function renderSalaryResult(data){
   var resEl=document.getElementById('salary-result'),noteEl=document.getElementById('salary-note');
@@ -651,23 +1579,83 @@ function buildRadarChart(){
   var p=APP.user&&APP.user.profile&&APP.user.profile.skills||{prog:60,data:40,comm:75,prob:70,tech:45};
   APP.charts.radar=new Chart(el,{type:'radar',data:{labels:['Programming','Data Analysis','Communication','Problem Solving','Tech Writing'],datasets:[{label:'Your Level',data:[p.prog,p.data,p.comm,p.prob,p.tech],fill:true,backgroundColor:'rgba(124,111,255,0.2)',borderColor:'rgba(124,111,255,0.8)',pointBackgroundColor:'#7C6FFF',pointRadius:4},{label:'Required',data:[80,85,70,80,60],fill:true,backgroundColor:'rgba(244,185,66,0.1)',borderColor:'rgba(244,185,66,0.6)',borderDash:[5,4],pointBackgroundColor:'#F4B942',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',font:CD.font,boxWidth:10}}},scales:{r:{grid:{color:CD.grid},ticks:{display:false},pointLabels:{color:CD.tick,font:CD.font},suggestedMin:0,suggestedMax:100}}}});
 }
-
 function buildSkillsChart(){
-  if(APP.charts.skillsBar)return;
+  if(APP.charts.skillsBar){APP.charts.skillsBar.destroy();delete APP.charts.skillsBar;}
   var el=document.getElementById('skills-bar-chart');if(!el)return;
-  var allNeed=[...APP.skillGaps.need,...APP.skillGaps.learning];
-  var labels=allNeed.map(function(s){return s.name||s;}).slice(0,8);
-  var yourVals=labels.map(function(n){var st=APP.skillStates[n]||'needs';return st==='completed'?95:st==='learning'?50:15;});
+
+  // Show ALL skills — both have and need — for a complete picture
+  var allSkills=[...APP.skillGaps.have,...APP.skillGaps.need,...APP.skillGaps.learning];
+  if(!allSkills.length) return;
+
+  var labels=allSkills.map(function(s){return s.name||s;}).slice(0,10);
+  var yourVals=labels.map(function(n){
+    var st=APP.skillStates[n]||'needs';
+    // If in "have" list, show high value
+    var inHave=APP.skillGaps.have.find(function(s){return(s.name||s)===n;});
+    if(inHave) return 85;
+    return st==='completed'?95:st==='learning'?50:15;
+  });
   var reqVals=labels.map(function(){return 80;});
-  APP.charts.skillsBar=new Chart(el,{type:'bar',data:{labels:labels,datasets:[{label:'Your Level',data:yourVals,backgroundColor:'rgba(124,111,255,0.7)',borderRadius:6,borderSkipped:false},{label:'Required',data:reqVals,backgroundColor:'rgba(244,185,66,0.3)',borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',font:CD.font,boxWidth:10}}},scales:{x:{grid:{color:CD.grid},ticks:{color:CD.tick,font:CD.font},suggestedMax:100},y:{grid:{display:false},ticks:{color:CD.tick,font:CD.font}}}}});
+
+  APP.charts.skillsBar=new Chart(el,{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {label:'Your Level',data:yourVals,backgroundColor:'rgba(124,111,255,0.7)',borderRadius:6,borderSkipped:false},
+        {label:'Required',data:reqVals,backgroundColor:'rgba(244,185,66,0.3)',borderRadius:6,borderSkipped:false}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',font:CD.font,boxWidth:10}}},
+      scales:{
+        x:{grid:{color:CD.grid},ticks:{color:CD.tick,font:CD.font},suggestedMax:100},
+        y:{grid:{display:false},ticks:{color:CD.tick,font:CD.font}}
+      }
+    }
+  });
+}
+function buildMarketCharts(){
+  var t = APP.market && APP.market.trends;
+  if(!t) return;
+
+  // Always destroy and rebuild so field-specific data shows
+  if(APP.charts.demand){ APP.charts.demand.destroy(); delete APP.charts.demand; }
+  if(APP.charts.salaryChart){ APP.charts.salaryChart.destroy(); delete APP.charts.salaryChart; }
+
+  var el = document.getElementById('demand-chart');
+  if(el) APP.charts.demand = new Chart(el,{
+    type:'bar',
+    data:{
+      labels: t.demandLabels,
+      datasets:[{
+        label:'Job Postings (thousands)',
+        data: t.demandValues,
+        backgroundColor:['rgba(244,185,66,.85)','rgba(124,111,255,.85)','rgba(92,225,200,.85)','rgba(255,87,87,.7)','rgba(244,185,66,.6)','rgba(124,111,255,.6)','rgba(92,225,200,.6)','rgba(77,216,154,.6)'],
+        borderRadius:8, borderSkipped:false
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:CD.tick,font:CD.font}},y:{grid:{color:CD.grid},ticks:{color:CD.tick,font:CD.font}}}}
+  });
+
+  var el2 = document.getElementById('salary-chart');
+  if(el2) APP.charts.salaryChart = new Chart(el2,{
+    type:'bar',
+    data:{
+      labels: t.salaryRoles,
+      datasets:[
+        {label:'Min LPA', data:t.salaryMin, backgroundColor:'rgba(124,111,255,0.5)', borderRadius:4},
+        {label:'Max LPA', data:t.salaryMax, backgroundColor:'rgba(244,185,66,0.75)', borderRadius:4}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',font:CD.font,boxWidth:10}}},
+      scales:{x:{grid:{display:false},ticks:{color:CD.tick,font:CD.font}},y:{grid:{color:CD.grid},ticks:{color:CD.tick,font:CD.font}}}}
+  });
 }
 
-function buildMarketCharts(){
-  if(!APP.market)return;
-  var t=APP.market.trends;
-  if(!APP.charts.demand){var el=document.getElementById('demand-chart');if(el)APP.charts.demand=new Chart(el,{type:'bar',data:{labels:t.demandLabels,datasets:[{label:'Job Postings (thousands)',data:t.demandValues,backgroundColor:['rgba(244,185,66,.85)','rgba(124,111,255,.85)','rgba(92,225,200,.85)','rgba(255,87,87,.7)','rgba(244,185,66,.6)','rgba(124,111,255,.6)','rgba(92,225,200,.6)','rgba(77,216,154,.6)'],borderRadius:8,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:CD.tick,font:CD.font}},y:{grid:{color:CD.grid},ticks:{color:CD.tick,font:CD.font}}}}});}
-  if(!APP.charts.salaryChart){var el2=document.getElementById('salary-chart');if(el2)APP.charts.salaryChart=new Chart(el2,{type:'bar',data:{labels:t.salaryRoles,datasets:[{label:'Min LPA',data:t.salaryMin,backgroundColor:'rgba(124,111,255,0.5)',borderRadius:4},{label:'Max LPA',data:t.salaryMax,backgroundColor:'rgba(244,185,66,0.75)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',font:CD.font,boxWidth:10}}},scales:{x:{grid:{display:false},ticks:{color:CD.tick,font:CD.font}},y:{grid:{color:CD.grid},ticks:{color:CD.tick,font:CD.font}}}}});}
-}
 
 function buildGrowthChart(proj){
   if(APP.charts.growth)return;
@@ -686,6 +1674,74 @@ function toast(icon,msg){clearTimeout(toastTimer);document.getElementById('toast
 // ─────────────────────────────────────────
 // FALLBACK DATA (if backend is offline)
 // ─────────────────────────────────────────
+function generateResume() {
+  var user = APP.user;
+  if (!user || !user.profile) {
+    toast('⚠️', 'Please complete your profile first.');
+    return;
+  }
+  var p = user.profile;
+  
+  // Format education
+  var qualMap = { '10th': '10th Standard', '12th': '12th Standard', 'diploma': 'Diploma', 'ug': "Bachelor's Degree", 'pg': "Master's Degree", 'phd': 'PhD/Doctorate' };
+  var fieldMap = { 'cs': 'Computer Science / IT', 'engg': 'Engineering', 'commerce': 'Commerce / Business', 'science': 'Sciences', 'arts': 'Arts & Humanities', 'medical': 'Medical', 'law':'Law', 'other':'Other' };
+  
+  var edu = `${qualMap[p.qualification] || p.qualification} in ${fieldMap[p.field] || p.field}\nGraduation: ${p.year || 'N/A'}`;
+  
+  // Formatting skills 
+  var skillsObj = p.skills || {};
+  var skillsList = [
+    `Programming/Tech: ${skillsObj.prog || 0}%`,
+    `Data Analysis: ${skillsObj.data || 0}%`,
+    `Communication: ${skillsObj.comm || 0}%`,
+    `Problem Solving: ${skillsObj.prob || 0}%`,
+    `Domain Skills: ${skillsObj.tech || 0}%`
+  ].join('\n  • ');
+
+  // Tools & Technologies
+  var toolsList = (p.tools && p.tools.length > 0) ? p.tools.join(', ') : 'None specified';
+  
+  // Goals & Interests
+  var objList = [];
+  if (p.goals && p.goals.length) objList.push("Goals: " + p.goals.join(', '));
+  if (p.interests && p.interests.length) objList.push("Interests: " + p.interests.join(', '));
+  var objText = objList.join('\n') || "Seeking opportunities to apply my skills.";
+
+  var resumeText = `
+======================================================
+                 ${user.name.toUpperCase()}
+           ${user.email} | ${user.phone || 'Phone not provided'} | PathForge Profile
+======================================================
+
+[ PROFESSIONAL SUMMARY & OBJECTIVES ]
+${objText}
+
+[ EDUCATION ]
+${edu}
+
+[ CORE SKILLS & PROFICIENCIES ]
+  • ${skillsList}
+
+[ TOOLS & TECHNOLOGIES ]
+${toolsList}
+
+[ PREFERRED LEARNING STYLE ]
+${(p.learning && p.learning.length > 0) ? p.learning.join(', ') : 'Online Learning'}
+
+[ AVAILABILITY ]
+Time Commitment: ${p.hours || 0} hours/week
+Target Timeline: ${p.timeline === '1m' ? '1 Month' : p.timeline === '3m' ? '3 Months' : p.timeline === '6m' ? '6 Months' : p.timeline === '1y' ? '1 Year' : p.timeline === '2y' ? '2 Years' : '3+ Years'}
+
+======================================================
+* Auto-generated by PathForge AI based on user data *
+  `;
+  
+  document.getElementById('resume-output').textContent = resumeText.trim();
+  document.getElementById('resume-modal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('resume-modal').style.opacity = '1', 10);
+  setTimeout(()=>document.getElementById('resume-modal').style.pointerEvents = 'all', 10);
+}
+
 var FALLBACK_WHATS_NEW=['Data Analyst demand ↑ 22% in last 30 days','New NSQF Level 5 cert launched by NASSCOM','Bengaluru surpassed Hyderabad as top hiring city','ML fresher salaries crossed ₹8 LPA'];
 
 function useFallbackData(){
