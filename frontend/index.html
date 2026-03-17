@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SmartLearn – AI Career Guidance Platform</title>
+<title>PathForge – AI Career Guidance Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -32,7 +32,7 @@
 <!-- ══ LANDING ══ -->
 <div class="screen active" id="screen-landing">
   <div class="top-bar">
-    <div class="logo">SmartLearn</div>
+    <div class="logo">PathForge</div>
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="nsqf-badge">🇮🇳 NSQF Aligned</div>
       <div class="theme-toggle" onclick="toggleTheme()"></div>
@@ -81,7 +81,7 @@
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" id="login-email" placeholder="you@example.com" value="priya@example.com"></div>
         <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" id="login-pwd" placeholder="••••••••" value="password"></div>
         <button class="btn-primary full-width" onclick="handleLogin()">Sign In →</button>
-        <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:14px;">Demo: priya@example.com / password</p>
+        <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:14px;">Demo: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3e4e4c57475f7e5b465f534e525b105d5153">[email&#160;protected]</a> / password</p>
       </div>
       <div id="register-form" style="display:none">
         <div class="auth-title">Create account</div>
@@ -127,28 +127,24 @@
             <option value="2024" selected>2024</option><option value="2023">2023</option>
             <option value="2022">2022</option><option value="2021">2021</option><option value="older">Before 2021</option>
           </select></div>
-        <div class="nav-row"><button class="btn-primary" onclick="nextStep(2)">Next →</button></div>
+        <div class="nav-row"><button class="btn-primary" onclick="goToSkills()">Next →</button></div>
       </div>
 
       <div class="card" id="step-2" style="display:none">
         <div class="section-tag">Step 2 of 5</div>
         <div class="card-title">Your Skills</div>
-        <div class="card-sub">Rate your proficiency (0 = Beginner · 100 = Expert)</div>
-        <div class="skill-row">
-          <div class="skill-item"><label>Programming <span id="s-prog-val">60</span>%</label><input type="range" min="0" max="100" value="60" oninput="document.getElementById('s-prog-val').textContent=this.value" id="s-prog"></div>
-          <div class="skill-item"><label>Data Analysis <span id="s-data-val">40</span>%</label><input type="range" min="0" max="100" value="40" oninput="document.getElementById('s-data-val').textContent=this.value" id="s-data"></div>
-          <div class="skill-item"><label>Communication <span id="s-comm-val">75</span>%</label><input type="range" min="0" max="100" value="75" oninput="document.getElementById('s-comm-val').textContent=this.value" id="s-comm"></div>
-          <div class="skill-item"><label>Problem Solving <span id="s-prob-val">70</span>%</label><input type="range" min="0" max="100" value="70" oninput="document.getElementById('s-prob-val').textContent=this.value" id="s-prob"></div>
-          <div class="skill-item"><label>Technical Writing <span id="s-tech-val">45</span>%</label><input type="range" min="0" max="100" value="45" oninput="document.getElementById('s-tech-val').textContent=this.value" id="s-tech"></div>
+        <div class="card-sub" id="step2-sub">Rate your proficiency (0 = Beginner · 100 = Expert)</div>
+        <div class="skill-row" id="skill-sliders">
+          <div class="skill-item"><label id="lbl-prog">Programming <span id="s-prog-val">50</span>%</label><input type="range" min="0" max="100" value="50" oninput="document.getElementById('s-prog-val').textContent=this.value" id="s-prog"></div>
+          <div class="skill-item"><label id="lbl-data">Data Analysis <span id="s-data-val">40</span>%</label><input type="range" min="0" max="100" value="40" oninput="document.getElementById('s-data-val').textContent=this.value" id="s-data"></div>
+          <div class="skill-item"><label id="lbl-comm">Communication <span id="s-comm-val">60</span>%</label><input type="range" min="0" max="100" value="60" oninput="document.getElementById('s-comm-val').textContent=this.value" id="s-comm"></div>
+          <div class="skill-item"><label id="lbl-prob">Problem Solving <span id="s-prob-val">60</span>%</label><input type="range" min="0" max="100" value="60" oninput="document.getElementById('s-prob-val').textContent=this.value" id="s-prob"></div>
+          <div class="skill-item"><label id="lbl-tech">Technical Skills <span id="s-tech-val">40</span>%</label><input type="range" min="0" max="100" value="40" oninput="document.getElementById('s-tech-val').textContent=this.value" id="s-tech"></div>
         </div>
-        <div style="margin-top:20px"><label class="form-label">Tools & Technologies you know</label>
-          <div class="chip-grid" id="tools-chips">
-            <div class="chip selected" data-val="Excel">Excel</div><div class="chip selected" data-val="Statistics">Statistics</div>
-            <div class="chip" data-val="Python">Python</div><div class="chip" data-val="SQL">SQL</div>
-            <div class="chip" data-val="Power BI">Power BI</div><div class="chip" data-val="Tableau">Tableau</div>
-            <div class="chip" data-val="Java">Java</div><div class="chip" data-val="React">React</div>
-            <div class="chip" data-val="Cloud">Cloud</div><div class="chip" data-val="ML">Machine Learning</div>
-          </div></div>
+        <div style="margin-top:20px">
+          <label class="form-label" id="tools-label">Tools & Technologies you know</label>
+          <div class="chip-grid" id="tools-chips"></div>
+        </div>
         <div class="nav-row"><button class="btn-ghost" onclick="nextStep(1)">← Back</button><button class="btn-primary" onclick="nextStep(3)">Next →</button></div>
       </div>
 
@@ -362,7 +358,7 @@
         </div>
         <div class="profile-hero">
           <div class="profile-big-avatar" id="profile-avatar">P</div>
-          <div><div class="profile-name" id="profile-name">Priya Sharma</div><div class="profile-email" id="profile-email">priya@example.com</div></div>
+          <div><div class="profile-name" id="profile-name">Priya Sharma</div><div class="profile-email" id="profile-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aededcc7d7cfeecbd6cfc3dec2cb80cdc1c3">[email&#160;protected]</a></div></div>
         </div>
         <div class="profile-section">
           <div class="profile-section-title">Profile Completion</div>
@@ -406,11 +402,13 @@
     <div class="mob-nav-btn active" onclick="switchPage('overview',null);updateMobNav(0)">🏠<span>Home</span></div>
     <div class="mob-nav-btn" onclick="switchPage('careers',null);updateMobNav(1)">🎯<span>Careers</span></div>
     <div class="mob-nav-btn" onclick="switchPage('roadmap',null);updateMobNav(2)">🗺️<span>Roadmap</span></div>
-    <div class="mob-nav-btn" onclick="switchPage('market',null);updateMobNav(3)">📊<span>Market</span></div>
+    <div class="mob-nav-btn" onclick="switchPage
+('market',null);updateMobNav(3)">📊<span>Market</span></div>
     <div class="mob-nav-btn" onclick="switchPage('profile',null);updateMobNav(4)">👤<span>Profile</span></div>
   </div>
 </div>
 
 <script src="app.js"></script>
+<script src="effects.js"></script>
 </body>
 </html>

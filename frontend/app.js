@@ -1,4 +1,7 @@
-
+// ═══════════════════════════════════════════════════════════
+// PathForge – Frontend (connects to Python smart backend)
+// Backend must be running on http://localhost:3001
+// ═══════════════════════════════════════════════════════════
 
 const API = 'http://localhost:3001/api';
 
@@ -16,6 +19,9 @@ var APP = {
   topCareerId: 1
 };
 
+// ─────────────────────────────────────────
+// API HELPER
+// ─────────────────────────────────────────
 async function api(path, opts) {
   opts = opts || {};
   const headers = { 'Content-Type': 'application/json' };
@@ -189,6 +195,147 @@ function initSteps(){currentStep=1;updateProgress();for(var i=1;i<=5;i++)documen
 function updateProgress(){var bar=document.getElementById('step-progress');bar.innerHTML='';for(var i=1;i<=5;i++){var d=document.createElement('div');d.className='step-dot'+(i<currentStep?' done':i===currentStep?' active':'');bar.appendChild(d);}var lbl=document.createElement('div');lbl.className='step-label';lbl.textContent=currentStep+'/5';bar.appendChild(lbl);}
 function nextStep(n){document.getElementById('step-'+currentStep).style.display='none';currentStep=n;document.getElementById('step-'+n).style.display='block';updateProgress();window.scrollTo(0,0);}
 function getChips(id){return Array.from(document.querySelectorAll('#'+id+' .chip.selected')).map(function(c){return c.getAttribute('data-val');});}
+
+// ─────────────────────────────────────────
+// DYNAMIC SKILLS BASED ON FIELD
+// ─────────────────────────────────────────
+var FIELD_CONFIG = {
+  cs: {
+    sub: 'Rate your proficiency in Computer Science & IT skills',
+    labels: { prog:'Programming', data:'Data Analysis', comm:'Communication', prob:'Problem Solving', tech:'Technical Skills' },
+    defaults: { prog:60, data:40, comm:60, prob:70, tech:50 },
+    toolsLabel: 'Tools & Technologies you know',
+    tools: [
+      {val:'Python',sel:false},{val:'SQL',sel:false},{val:'Java',sel:false},
+      {val:'React',sel:false},{val:'Excel',sel:true},{val:'Statistics',sel:true},
+      {val:'Power BI',sel:false},{val:'Cloud',sel:false},{val:'ML',sel:false},{val:'Git',sel:false}
+    ]
+  },
+  engg: {
+    sub: 'Rate your proficiency in Engineering skills',
+    labels: { prog:'Programming / Coding', data:'Data & Analysis', comm:'Communication', prob:'Problem Solving', tech:'Technical / Domain Skills' },
+    defaults: { prog:50, data:40, comm:60, prob:70, tech:60 },
+    toolsLabel: 'Engineering Tools you know',
+    tools: [
+      {val:'AutoCAD',sel:false},{val:'MATLAB',sel:false},{val:'Python',sel:false},
+      {val:'Excel',sel:true},{val:'Statistics',sel:true},{val:'CAD Software',sel:false},
+      {val:'Circuit Design',sel:false},{val:'Project Management',sel:false},{val:'SQL',sel:false},{val:'Cloud',sel:false}
+    ]
+  },
+  commerce: {
+    sub: 'Rate your proficiency in Commerce & Business skills',
+    labels: { prog:'Digital / Tech Skills', data:'Data & Financial Analysis', comm:'Communication & Presentation', prob:'Problem Solving', tech:'Business & Domain Knowledge' },
+    defaults: { prog:30, data:50, comm:70, prob:60, tech:65 },
+    toolsLabel: 'Business Tools you know',
+    tools: [
+      {val:'Excel',sel:true},{val:'Tally',sel:false},{val:'Statistics',sel:true},
+      {val:'Power BI',sel:false},{val:'Google Analytics',sel:false},{val:'SQL',sel:false},
+      {val:'Accounting Software',sel:false},{val:'MS Office',sel:true},{val:'CRM Tools',sel:false},{val:'Tableau',sel:false}
+    ]
+  },
+  science: {
+    sub: 'Rate your proficiency in Science & Research skills',
+    labels: { prog:'Programming / Coding', data:'Data Analysis & Statistics', comm:'Communication & Writing', prob:'Problem Solving & Research', tech:'Lab & Technical Skills' },
+    defaults: { prog:40, data:60, comm:60, prob:65, tech:55 },
+    toolsLabel: 'Science & Research Tools you know',
+    tools: [
+      {val:'Python',sel:false},{val:'R Programming',sel:false},{val:'SPSS',sel:false},
+      {val:'Excel',sel:true},{val:'Statistics',sel:true},{val:'MATLAB',sel:false},
+      {val:'Lab Equipment',sel:false},{val:'LaTeX',sel:false},{val:'SQL',sel:false},{val:'Tableau',sel:false}
+    ]
+  },
+  arts: {
+    sub: 'Rate your proficiency in Arts & Humanities skills',
+    labels: { prog:'Digital & Tech Skills', data:'Research & Analysis', comm:'Communication & Writing', prob:'Critical Thinking', tech:'Creative & Domain Skills' },
+    defaults: { prog:25, data:40, comm:75, prob:60, tech:65 },
+    toolsLabel: 'Tools & Platforms you know',
+    tools: [
+      {val:'MS Office',sel:true},{val:'Google Workspace',sel:true},{val:'Social Media',sel:false},
+      {val:'Content Writing',sel:false},{val:'Canva',sel:false},{val:'WordPress',sel:false},
+      {val:'Excel',sel:false},{val:'Photography',sel:false},{val:'Video Editing',sel:false},{val:'SEO',sel:false}
+    ]
+  },
+  medical: {
+    sub: 'Rate your proficiency in Healthcare & Medical skills',
+    labels: { prog:'Digital / Tech Skills', data:'Data & Clinical Analysis', comm:'Patient Communication', prob:'Clinical Problem Solving', tech:'Medical & Domain Knowledge' },
+    defaults: { prog:25, data:45, comm:70, prob:65, tech:70 },
+    toolsLabel: 'Medical & Healthcare Tools you know',
+    tools: [
+      {val:'MS Office',sel:true},{val:'Excel',sel:true},{val:'HMIS Systems',sel:false},
+      {val:'Medical Coding',sel:false},{val:'Statistics',sel:false},{val:'EHR Software',sel:false},
+      {val:'Lab Equipment',sel:false},{val:'SQL',sel:false},{val:'Power BI',sel:false},{val:'Python',sel:false}
+    ]
+  },
+  law: {
+    sub: 'Rate your proficiency in Legal & Professional skills',
+    labels: { prog:'Digital & Tech Skills', data:'Research & Analysis', comm:'Communication & Advocacy', prob:'Legal Problem Solving', tech:'Legal Domain Knowledge' },
+    defaults: { prog:25, data:50, comm:75, prob:65, tech:70 },
+    toolsLabel: 'Legal & Professional Tools you know',
+    tools: [
+      {val:'MS Office',sel:true},{val:'Legal Research Tools',sel:false},{val:'Excel',sel:true},
+      {val:'Case Management Software',sel:false},{val:'Documentation',sel:false},{val:'Google Workspace',sel:true},
+      {val:'Statistics',sel:false},{val:'Presentation Tools',sel:false},{val:'Database Research',sel:false},{val:'Contract Drafting',sel:false}
+    ]
+  },
+  other: {
+    sub: 'Rate your proficiency in key skill areas',
+    labels: { prog:'Digital & Tech Skills', data:'Data & Analysis', comm:'Communication', prob:'Problem Solving', tech:'Domain / Specialist Skills' },
+    defaults: { prog:35, data:35, comm:65, prob:60, tech:55 },
+    toolsLabel: 'Tools & Skills you know',
+    tools: [
+      {val:'MS Office',sel:true},{val:'Excel',sel:true},{val:'Google Workspace',sel:true},
+      {val:'Communication',sel:false},{val:'Social Media',sel:false},{val:'Statistics',sel:false},
+      {val:'Python',sel:false},{val:'SQL',sel:false},{val:'Canva',sel:false},{val:'Project Management',sel:false}
+    ]
+  }
+};
+
+function goToSkills() {
+  var field = document.getElementById('field').value || 'cs';
+  var config = FIELD_CONFIG[field] || FIELD_CONFIG['other'];
+
+  // Update subtitle
+  var subEl = document.getElementById('step2-sub');
+  if (subEl) subEl.textContent = config.sub;
+
+  // Update slider labels
+  document.getElementById('lbl-prog').innerHTML = config.labels.prog + ' <span id="s-prog-val">' + config.defaults.prog + '</span>%';
+  document.getElementById('lbl-data').innerHTML = config.labels.data + ' <span id="s-data-val">' + config.defaults.data + '</span>%';
+  document.getElementById('lbl-comm').innerHTML = config.labels.comm + ' <span id="s-comm-val">' + config.defaults.comm + '</span>%';
+  document.getElementById('lbl-prob').innerHTML = config.labels.prob + ' <span id="s-prob-val">' + config.defaults.prob + '</span>%';
+  document.getElementById('lbl-tech').innerHTML = config.labels.tech + ' <span id="s-tech-val">' + config.defaults.tech + '</span>%';
+
+  // Update slider default values
+  document.getElementById('s-prog').value = config.defaults.prog;
+  document.getElementById('s-data').value = config.defaults.data;
+  document.getElementById('s-comm').value = config.defaults.comm;
+  document.getElementById('s-prob').value = config.defaults.prob;
+  document.getElementById('s-tech').value = config.defaults.tech;
+
+  // Re-attach oninput handlers since innerHTML replaced the spans
+  document.getElementById('s-prog').oninput = function(){ document.getElementById('s-prog-val').textContent = this.value; };
+  document.getElementById('s-data').oninput = function(){ document.getElementById('s-data-val').textContent = this.value; };
+  document.getElementById('s-comm').oninput = function(){ document.getElementById('s-comm-val').textContent = this.value; };
+  document.getElementById('s-prob').oninput = function(){ document.getElementById('s-prob-val').textContent = this.value; };
+  document.getElementById('s-tech').oninput = function(){ document.getElementById('s-tech-val').textContent = this.value; };
+
+  // Update tools label
+  var toolsLabel = document.getElementById('tools-label');
+  if (toolsLabel) toolsLabel.textContent = config.toolsLabel;
+
+  // Render tool chips dynamically
+  var chipsContainer = document.getElementById('tools-chips');
+  chipsContainer.innerHTML = config.tools.map(function(t) {
+    return '<div class="chip' + (t.sel ? ' selected' : '') + '" data-val="' + t.val + '">' + t.val + '</div>';
+  }).join('');
+
+  // Re-attach chip click handlers
+  chipsContainer.querySelectorAll('.chip').forEach(function(c) {
+    c.addEventListener('click', function() { c.classList.toggle('selected'); });
+  });
+
+  nextStep(2);
+}
 
 async function submitProfile(){
   var profile={

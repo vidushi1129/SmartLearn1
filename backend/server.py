@@ -5,10 +5,27 @@ import jwt
 import datetime
 import random
 
+# ─── NEW: Google Auth ───────────────────────────────────────────────────────
+# pip install google-auth
+try:
+    from google.oauth2 import id_token
+    from google.auth.transport import requests as grequests
+    GOOGLE_AUTH_AVAILABLE = True
+except ImportError:
+    GOOGLE_AUTH_AVAILABLE = False
+    print("[WARNING] google-auth not installed. Run: pip install google-auth")
+    print("[WARNING] Google Sign-In will return 503 until installed.")
+# ────────────────────────────────────────────────────────────────────────────
+
 app = Flask(__name__)
 CORS(app)
 
 JWT_SECRET = "pathforge_secret_2025"
+
+# ─── IMPORTANT: Replace with your actual Google OAuth Client ID ─────────────
+# Get it from: https://console.cloud.google.com → APIs & Services → Credentials
+GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com"
+# ────────────────────────────────────────────────────────────────────────────
 
 db = {
     "users": [
@@ -17,6 +34,7 @@ db = {
             "name": "Priya Sharma",
             "email": "priya@example.com",
             "password_hash": bcrypt.hashpw("password".encode(), bcrypt.gensalt()).decode(),
+            "google_id": None,
             "profile": {
                 "qualification": "ug",
                 "field": "cs",
@@ -36,7 +54,11 @@ db = {
     ]
 }
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CAREERS  (original 12 + 6 new medical/healthcare careers)
+# ─────────────────────────────────────────────────────────────────────────────
 ALL_CAREERS = [
+    # ── 1. Data Analyst ──────────────────────────────────────────────────────
     {
         "id": 1,
         "name": "Data Analyst",
@@ -63,6 +85,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "data_analyst"
     },
+    # ── 2. Business Intelligence Analyst ─────────────────────────────────────
     {
         "id": 2,
         "name": "Business Intelligence Analyst",
@@ -88,6 +111,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "bi_analyst"
     },
+    # ── 3. AI / ML Technician ─────────────────────────────────────────────────
     {
         "id": 3,
         "name": "AI / ML Technician",
@@ -113,6 +137,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "ml_engineer"
     },
+    # ── 4. Data Engineer ──────────────────────────────────────────────────────
     {
         "id": 4,
         "name": "Data Engineer",
@@ -138,6 +163,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "data_engineer"
     },
+    # ── 5. Product Analyst ────────────────────────────────────────────────────
     {
         "id": 5,
         "name": "Product Analyst",
@@ -162,6 +188,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "product_analyst"
     },
+    # ── 6. IT Systems Analyst ─────────────────────────────────────────────────
     {
         "id": 6,
         "name": "IT Systems Analyst",
@@ -185,6 +212,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "it_systems"
     },
+    # ── 7. Digital Marketing Analyst ──────────────────────────────────────────
     {
         "id": 7,
         "name": "Digital Marketing Analyst",
@@ -209,6 +237,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "digital_marketing"
     },
+    # ── 8. QA Test Analyst ────────────────────────────────────────────────────
     {
         "id": 8,
         "name": "QA Test Analyst",
@@ -232,6 +261,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "qa_analyst"
     },
+    # ── 9. Government Data Officer ────────────────────────────────────────────
     {
         "id": 9,
         "name": "Government Data Officer",
@@ -255,6 +285,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "govt_data"
     },
+    # ── 10. Cloud Solutions Architect ─────────────────────────────────────────
     {
         "id": 10,
         "name": "Cloud Solutions Architect",
@@ -279,6 +310,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "cloud_architect"
     },
+    # ── 11. Healthcare Data Analyst ───────────────────────────────────────────
     {
         "id": 11,
         "name": "Healthcare Data Analyst",
@@ -303,6 +335,7 @@ ALL_CAREERS = [
         },
         "roadmap_template": "healthcare_analyst"
     },
+    # ── 12. Freelance Data Consultant ─────────────────────────────────────────
     {
         "id": 12,
         "name": "Freelance Data Consultant",
@@ -326,9 +359,173 @@ ALL_CAREERS = [
             "Portfolio Building": {"needed_comm": 60, "weight": "low"}
         },
         "roadmap_template": "freelance"
+    },
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # NEW MEDICAL / HEALTHCARE TECHNOLOGY CAREERS (IDs 13–18)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # ── 13. Health Informatics Engineer ───────────────────────────────────────
+    {
+        "id": 13,
+        "name": "Health Informatics Engineer",
+        "nsqf_level": 6,
+        "base_salary": {"0": [6, 10], "2": [10, 18], "4": [18, 28], "7": [28, 45]},
+        "city_mult": {"bangalore": 1.2, "hyderabad": 1.1, "mumbai": 1.15, "delhi": 1.1, "pune": 1.05, "chennai": 1.0, "tier2": 0.78},
+        "demand": "High",
+        "growth": "+32%",
+        "openings": "9,000",
+        "tags": ["HL7 FHIR", "EHR Systems", "SQL", "Python", "Healthcare IT"],
+        "skill_weights": {"prog": 0.30, "data": 0.25, "comm": 0.15, "prob": 0.20, "tech": 0.10},
+        "tool_boost": {"SQL": 8, "Python": 7, "HL7 FHIR": 10, "EHR": 9},
+        "goal_match": ["Healthcare", "IT Jobs"],
+        "interest_match": ["Healthcare", "Technology", "Data Science", "Research"],
+        "field_match": ["medical", "cs", "engg", "science"],
+        "required_skills": {
+            "HL7 and FHIR Standards": {"needed_tech": 50, "weight": "high"},
+            "EHR EMR Systems": {"needed_tech": 45, "weight": "high"},
+            "SQL and Databases": {"needed_data": 55, "weight": "high"},
+            "Python for Healthcare": {"needed_prog": 55, "weight": "medium"},
+            "ICD-10 Medical Coding": {"needed_tech": 40, "weight": "medium"},
+            "Data Privacy HIPAA": {"needed_comm": 45, "weight": "low"}
+        },
+        "roadmap_template": "health_informatics"
+    },
+    # ── 14. Medical Device Software Engineer ──────────────────────────────────
+    {
+        "id": 14,
+        "name": "Medical Device Software Engineer",
+        "nsqf_level": 6,
+        "base_salary": {"0": [7, 12], "2": [12, 22], "4": [22, 35], "7": [35, 55]},
+        "city_mult": {"bangalore": 1.25, "hyderabad": 1.15, "mumbai": 1.15, "delhi": 1.1, "pune": 1.1, "chennai": 1.05, "tier2": 0.8},
+        "demand": "High",
+        "growth": "+28%",
+        "openings": "7,500",
+        "tags": ["C/C++", "Embedded Systems", "IEC 62304", "FDA Regulations"],
+        "skill_weights": {"prog": 0.45, "data": 0.10, "comm": 0.10, "prob": 0.25, "tech": 0.10},
+        "tool_boost": {"C/C++": 10, "Embedded Systems": 9, "Python": 5},
+        "goal_match": ["IT Jobs", "Healthcare"],
+        "interest_match": ["Healthcare", "Technology", "Research"],
+        "field_match": ["engg", "cs", "medical"],
+        "required_skills": {
+            "C and C++ Programming": {"needed_prog": 70, "weight": "high"},
+            "Embedded Systems RTOS": {"needed_prog": 65, "weight": "high"},
+            "IEC 62304 Standard": {"needed_tech": 50, "weight": "high"},
+            "FDA 21 CFR Part 11": {"needed_comm": 40, "weight": "medium"},
+            "Signal Processing": {"needed_data": 45, "weight": "medium"},
+            "Hardware Interfacing": {"needed_tech": 45, "weight": "low"}
+        },
+        "roadmap_template": "medical_device_sw"
+    },
+    # ── 15. Clinical Data Engineer ────────────────────────────────────────────
+    {
+        "id": 15,
+        "name": "Clinical Data Engineer",
+        "nsqf_level": 6,
+        "base_salary": {"0": [6, 11], "2": [11, 20], "4": [20, 32], "7": [32, 50]},
+        "city_mult": {"bangalore": 1.2, "hyderabad": 1.12, "mumbai": 1.15, "delhi": 1.1, "pune": 1.08, "chennai": 1.0, "tier2": 0.8},
+        "demand": "High",
+        "growth": "+35%",
+        "openings": "6,000",
+        "tags": ["Clinical Trials", "CDISC", "SAS", "R", "Python"],
+        "skill_weights": {"prog": 0.30, "data": 0.35, "comm": 0.10, "prob": 0.15, "tech": 0.10},
+        "tool_boost": {"Python": 8, "SAS": 9, "R": 8, "SQL": 7},
+        "goal_match": ["Healthcare", "Research", "IT Jobs"],
+        "interest_match": ["Healthcare", "Research", "Data Science"],
+        "field_match": ["medical", "science", "cs", "engg"],
+        "required_skills": {
+            "CDISC Standards SDTM ADaM": {"needed_tech": 55, "weight": "high"},
+            "SAS Programming": {"needed_prog": 60, "weight": "high"},
+            "Clinical Trial Protocols": {"needed_data": 50, "weight": "high"},
+            "R or Python for Statistics": {"needed_prog": 55, "weight": "medium"},
+            "Regulatory Submissions": {"needed_comm": 45, "weight": "medium"},
+            "Medical Terminology": {"needed_tech": 40, "weight": "low"}
+        },
+        "roadmap_template": "clinical_data"
+    },
+    # ── 16. AI Diagnostics Engineer ───────────────────────────────────────────
+    {
+        "id": 16,
+        "name": "AI Diagnostics Engineer",
+        "nsqf_level": 7,
+        "base_salary": {"0": [9, 15], "2": [15, 26], "4": [26, 42], "7": [42, 70]},
+        "city_mult": {"bangalore": 1.3, "hyderabad": 1.18, "mumbai": 1.2, "delhi": 1.15, "pune": 1.12, "chennai": 1.05, "tier2": 0.82},
+        "demand": "Very High",
+        "growth": "+48%",
+        "openings": "5,500",
+        "tags": ["Medical Imaging AI", "PyTorch", "DICOM", "Computer Vision", "Deep Learning"],
+        "skill_weights": {"prog": 0.40, "data": 0.25, "comm": 0.05, "prob": 0.20, "tech": 0.10},
+        "tool_boost": {"Python": 9, "PyTorch": 10, "TensorFlow": 9, "OpenCV": 8},
+        "goal_match": ["Healthcare", "Research", "IT Jobs"],
+        "interest_match": ["Healthcare", "Technology", "Research", "Data Science"],
+        "field_match": ["medical", "cs", "engg", "science"],
+        "required_skills": {
+            "Deep Learning CNN": {"needed_prog": 75, "weight": "high"},
+            "DICOM Medical Imaging": {"needed_tech": 60, "weight": "high"},
+            "PyTorch or TensorFlow": {"needed_prog": 70, "weight": "high"},
+            "Computer Vision OpenCV": {"needed_prog": 60, "weight": "high"},
+            "Medical Image Datasets": {"needed_data": 55, "weight": "medium"},
+            "Model Validation FDA": {"needed_comm": 40, "weight": "low"}
+        },
+        "roadmap_template": "ai_diagnostics"
+    },
+    # ── 17. Telemedicine Platform Developer ───────────────────────────────────
+    {
+        "id": 17,
+        "name": "Telemedicine Platform Developer",
+        "nsqf_level": 6,
+        "base_salary": {"0": [6, 10], "2": [10, 18], "4": [18, 28], "7": [28, 45]},
+        "city_mult": {"bangalore": 1.2, "hyderabad": 1.1, "mumbai": 1.15, "delhi": 1.1, "pune": 1.05, "chennai": 1.0, "tier2": 0.85},
+        "demand": "High",
+        "growth": "+38%",
+        "openings": "8,000",
+        "tags": ["WebRTC", "React", "Node.js", "IoT", "Healthcare APIs"],
+        "skill_weights": {"prog": 0.40, "data": 0.10, "comm": 0.20, "prob": 0.20, "tech": 0.10},
+        "tool_boost": {"Python": 6, "JavaScript": 8, "WebRTC": 9, "IoT": 8},
+        "goal_match": ["Healthcare", "IT Jobs", "Entrepreneurship"],
+        "interest_match": ["Healthcare", "Technology", "Design", "Business"],
+        "field_match": ["cs", "engg", "medical"],
+        "required_skills": {
+            "React or Angular Frontend": {"needed_prog": 60, "weight": "high"},
+            "Node.js Backend": {"needed_prog": 55, "weight": "high"},
+            "WebRTC Video Calls": {"needed_tech": 50, "weight": "high"},
+            "Healthcare API FHIR": {"needed_tech": 45, "weight": "medium"},
+            "IoT Device Integration": {"needed_tech": 40, "weight": "medium"},
+            "Data Security HIPAA": {"needed_comm": 45, "weight": "low"}
+        },
+        "roadmap_template": "telemedicine_dev"
+    },
+    # ── 18. Biomedical AI Researcher ──────────────────────────────────────────
+    {
+        "id": 18,
+        "name": "Biomedical AI Researcher",
+        "nsqf_level": 7,
+        "base_salary": {"0": [8, 14], "2": [14, 24], "4": [24, 40], "7": [40, 65]},
+        "city_mult": {"bangalore": 1.25, "hyderabad": 1.15, "mumbai": 1.18, "delhi": 1.12, "pune": 1.1, "chennai": 1.05, "tier2": 0.82},
+        "demand": "High",
+        "growth": "+45%",
+        "openings": "4,000",
+        "tags": ["Genomics", "Bioinformatics", "Python", "R", "ML for Healthcare"],
+        "skill_weights": {"prog": 0.30, "data": 0.30, "comm": 0.10, "prob": 0.20, "tech": 0.10},
+        "tool_boost": {"Python": 9, "R": 9, "TensorFlow": 7, "Statistics": 8},
+        "goal_match": ["Healthcare", "Research"],
+        "interest_match": ["Healthcare", "Research", "Data Science", "Technology"],
+        "field_match": ["medical", "science", "cs", "engg"],
+        "required_skills": {
+            "Python and R Programming": {"needed_prog": 65, "weight": "high"},
+            "Bioinformatics Genomics": {"needed_data": 65, "weight": "high"},
+            "ML for Drug Discovery": {"needed_prog": 60, "weight": "high"},
+            "Statistical Modeling": {"needed_data": 60, "weight": "medium"},
+            "Research Paper Writing": {"needed_comm": 55, "weight": "medium"},
+            "Clinical Data Interpretation": {"needed_data": 50, "weight": "low"}
+        },
+        "roadmap_template": "biomedical_ai"
     }
 ]
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ROADMAP TEMPLATES  (original + 6 new medical templates)
+# ─────────────────────────────────────────────────────────────────────────────
 ROADMAP_TEMPLATES = {
     "data_analyst": [
         {"nsqf": "NSQF Level 3", "title": "Foundation Skills",      "base_desc": "Python basics, Excel, statistics fundamentals.",         "duration_weeks": 4,  "state_threshold": 40},
@@ -413,10 +610,57 @@ ROADMAP_TEMPLATES = {
         {"nsqf": "NSQF Level 5", "title": "Build Portfolio",           "base_desc": "3 to 5 real client projects, GitHub, LinkedIn.",   "duration_weeks": 8,  "state_threshold": 68},
         {"nsqf": "NSQF Level 5", "title": "First Clients",             "base_desc": "Land first 3 paying clients, build testimonials.", "duration_weeks": 6,  "state_threshold": 85},
         {"nsqf": "NSQF Level 5", "title": "Scale Freelance Business",  "base_desc": "Raise rates, specialize, build recurring revenue.","duration_weeks": 0,  "state_threshold": 100}
+    ],
+
+    # ── NEW MEDICAL ROADMAP TEMPLATES ─────────────────────────────────────────
+    "health_informatics": [
+        {"nsqf": "NSQF Level 4", "title": "Healthcare IT Basics",      "base_desc": "Introduction to EHR systems, healthcare workflows, HMIS basics.",       "duration_weeks": 4,  "state_threshold": 35},
+        {"nsqf": "NSQF Level 5", "title": "HL7 and FHIR Standards",    "base_desc": "HL7 v2/v3, FHIR R4, API integration with hospital systems.",            "duration_weeks": 7,  "state_threshold": 55},
+        {"nsqf": "NSQF Level 5", "title": "SQL and Data Pipelines",    "base_desc": "Clinical databases, SQL queries, ICD-10 coding, patient data handling.","duration_weeks": 6,  "state_threshold": 70},
+        {"nsqf": "NSQF Level 6", "title": "Hospital IT Internship",    "base_desc": "Live project at hospital or health-tech company under NCVET.",          "duration_weeks": 10, "state_threshold": 86},
+        {"nsqf": "NSQF Level 6", "title": "Health Informatics Ready",  "base_desc": "HL7 FHIR certification, portfolio, interview prep.",                    "duration_weeks": 2,  "state_threshold": 100}
+    ],
+    "medical_device_sw": [
+        {"nsqf": "NSQF Level 4", "title": "Embedded C Foundations",    "base_desc": "C programming, microcontrollers, RTOS fundamentals.",                   "duration_weeks": 6,  "state_threshold": 38},
+        {"nsqf": "NSQF Level 5", "title": "Medical Device Standards",  "base_desc": "IEC 62304, ISO 13485, FDA 21 CFR Part 11 compliance basics.",           "duration_weeks": 7,  "state_threshold": 55},
+        {"nsqf": "NSQF Level 6", "title": "Embedded Medical Software", "base_desc": "ECG/EEG signal processing, hardware interfacing, safety-critical code.","duration_weeks": 10, "state_threshold": 72},
+        {"nsqf": "NSQF Level 6", "title": "Industry Internship",       "base_desc": "Internship at medical device company (GE Healthcare, Philips, etc.).",  "duration_weeks": 12, "state_threshold": 88},
+        {"nsqf": "NSQF Level 6", "title": "Medical Device SW Ready",   "base_desc": "IEC 62304 certification, portfolio, interview prep.",                   "duration_weeks": 2,  "state_threshold": 100}
+    ],
+    "clinical_data": [
+        {"nsqf": "NSQF Level 4", "title": "Clinical Research Basics",  "base_desc": "Clinical trial phases, GCP guidelines, regulatory frameworks.",         "duration_weeks": 4,  "state_threshold": 35},
+        {"nsqf": "NSQF Level 5", "title": "CDISC and SAS",             "base_desc": "CDISC SDTM, ADaM models, SAS BASE and PROC SQL for clinical data.",     "duration_weeks": 8,  "state_threshold": 55},
+        {"nsqf": "NSQF Level 6", "title": "Statistical Programming",   "base_desc": "R or Python for biostatistics, survival analysis, regulatory submissions.","duration_weeks": 8,"state_threshold": 72},
+        {"nsqf": "NSQF Level 6", "title": "CRO or Pharma Internship",  "base_desc": "Contract Research Organization internship with real trial data.",       "duration_weeks": 12, "state_threshold": 88},
+        {"nsqf": "NSQF Level 6", "title": "Clinical Data Engineer Ready","base_desc": "SAS certification, portfolio, regulatory interview prep.",             "duration_weeks": 2,  "state_threshold": 100}
+    ],
+    "ai_diagnostics": [
+        {"nsqf": "NSQF Level 5", "title": "Deep Learning Foundations", "base_desc": "CNNs, PyTorch basics, image classification fundamentals.",               "duration_weeks": 7,  "state_threshold": 38},
+        {"nsqf": "NSQF Level 6", "title": "Medical Imaging Basics",    "base_desc": "DICOM format, radiology datasets, preprocessing medical images.",        "duration_weeks": 6,  "state_threshold": 55},
+        {"nsqf": "NSQF Level 6", "title": "AI Diagnostic Models",      "base_desc": "Segmentation, detection models for X-ray, MRI, pathology slides.",      "duration_weeks": 10, "state_threshold": 72},
+        {"nsqf": "NSQF Level 7", "title": "Hospital AI Internship",    "base_desc": "Deploy AI model in clinical setting, IRB ethics, FDA SaMD guidelines.", "duration_weeks": 12, "state_threshold": 88},
+        {"nsqf": "NSQF Level 7", "title": "AI Diagnostics Engineer Ready","base_desc": "Research publication, portfolio, interview at health-AI company.",   "duration_weeks": 2,  "state_threshold": 100}
+    ],
+    "telemedicine_dev": [
+        {"nsqf": "NSQF Level 4", "title": "Web Dev Foundations",       "base_desc": "HTML, CSS, JavaScript, React basics, REST APIs.",                       "duration_weeks": 6,  "state_threshold": 38},
+        {"nsqf": "NSQF Level 5", "title": "Real-Time Communication",   "base_desc": "WebRTC, Socket.IO, video call integration, Node.js backend.",           "duration_weeks": 7,  "state_threshold": 55},
+        {"nsqf": "NSQF Level 6", "title": "Healthcare Platform Dev",   "base_desc": "FHIR APIs, prescription modules, patient portal, IoT sensor data.",     "duration_weeks": 8,  "state_threshold": 72},
+        {"nsqf": "NSQF Level 6", "title": "Healthtech Internship",     "base_desc": "Build or contribute to a live telemedicine platform under NCVET.",      "duration_weeks": 10, "state_threshold": 87},
+        {"nsqf": "NSQF Level 6", "title": "Telemedicine Dev Ready",    "base_desc": "Portfolio, HIPAA compliance knowledge, interview prep.",                "duration_weeks": 2,  "state_threshold": 100}
+    ],
+    "biomedical_ai": [
+        {"nsqf": "NSQF Level 5", "title": "Bioinformatics Basics",     "base_desc": "Genomics intro, Python for biology (Biopython), sequence analysis.",    "duration_weeks": 6,  "state_threshold": 38},
+        {"nsqf": "NSQF Level 6", "title": "ML for Healthcare",         "base_desc": "Scikit-learn, survival models, drug target prediction, scRNA-seq.",     "duration_weeks": 8,  "state_threshold": 55},
+        {"nsqf": "NSQF Level 6", "title": "Deep Learning in Biomedicine","base_desc": "Graph neural networks, protein structure prediction, AlphaFold basics.","duration_weeks": 10,"state_threshold": 72},
+        {"nsqf": "NSQF Level 7", "title": "Research Collaboration",    "base_desc": "IIT/AIIMS research project, publish or present findings.",              "duration_weeks": 16, "state_threshold": 88},
+        {"nsqf": "NSQF Level 7", "title": "Biomedical AI Researcher Ready","base_desc": "Publication, PhD or industry research role applications.",          "duration_weeks": 2,  "state_threshold": 100}
     ]
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPER FUNCTIONS  (unchanged from original)
+# ─────────────────────────────────────────────────────────────────────────────
 def compute_score(career, profile):
     skills = profile.get("skills", {})
     prog = skills.get("prog", 0)
@@ -531,14 +775,16 @@ def build_roadmap(career, profile, skill_gaps):
 
 
 def compute_salary(career, profile):
-    year = profile.get("year", "2024")
+    year = profile.get("year", "2025")
     qual = profile.get("qualification", "ug")
     try:
         if str(year).isdigit():
             grad_yr = int(year)
         else:
-            grad_yr = 2024
-        exp_years = max(0, 2025 - grad_yr)
+            grad_yr = 2025
+        # ── UPDATED: handle future grad years (2026-2030) as 0 experience ──
+        current_year = datetime.datetime.utcnow().year
+        exp_years = max(0, current_year - grad_yr)
     except Exception:
         exp_years = 0
     if exp_years <= 1:
@@ -604,6 +850,9 @@ def user_public(u):
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTH ROUTES
+# ─────────────────────────────────────────────────────────────────────────────
 @app.route("/api/auth/register", methods=["POST"])
 def register():
     d = request.get_json()
@@ -620,6 +869,7 @@ def register():
         "name": name,
         "email": email,
         "password_hash": password_hash,
+        "google_id": None,
         "profile": None,
         "skill_states": {},
         "streak": 0,
@@ -636,7 +886,7 @@ def login():
     email = d.get("email", "").strip()
     password = d.get("password", "")
     user = find_user_by_email(email)
-    if not user or not bcrypt.checkpw(password.encode(), user["password_hash"].encode()):
+    if not user or not user.get("password_hash") or not bcrypt.checkpw(password.encode(), user["password_hash"].encode()):
         return jsonify({"error": "Invalid credentials"}), 401
     try:
         last = datetime.datetime.fromisoformat(user["last_login"])
@@ -650,6 +900,81 @@ def login():
     user["last_login"] = datetime.datetime.utcnow().isoformat()
     token = make_token(user["id"], email)
     return jsonify({"token": token, "user": user_public(user)})
+
+
+# ── NEW: Google Sign-In route ─────────────────────────────────────────────────
+@app.route("/api/auth/google", methods=["POST"])
+def google_login():
+    """
+    Frontend sends the Google credential token here after user clicks
+    the Google Sign-In button. This verifies it and returns a JWT.
+    """
+    if not GOOGLE_AUTH_AVAILABLE:
+        return jsonify({"error": "Google auth library not installed on server. Run: pip install google-auth"}), 503
+
+    data = request.get_json()
+    credential = data.get("credential")
+    if not credential:
+        return jsonify({"error": "No Google credential provided"}), 400
+
+    if GOOGLE_CLIENT_ID == "YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com":
+        return jsonify({"error": "Google Client ID not configured in server.py. Replace GOOGLE_CLIENT_ID with your real client ID."}), 503
+
+    try:
+        # Verify the Google token
+        id_info = id_token.verify_oauth2_token(
+            credential,
+            grequests.Request(),
+            GOOGLE_CLIENT_ID
+        )
+        google_id = id_info["sub"]
+        email = id_info["email"]
+        name = id_info.get("name", email.split("@")[0])
+
+        # Find existing user by google_id or email
+        user = next((u for u in db["users"] if u.get("google_id") == google_id), None)
+        if not user:
+            user = find_user_by_email(email)
+
+        if user:
+            # Link Google ID if not already linked
+            if not user.get("google_id"):
+                user["google_id"] = google_id
+        else:
+            # Create new user via Google
+            user = {
+                "id": len(db["users"]) + 1,
+                "name": name,
+                "email": email,
+                "password_hash": None,
+                "google_id": google_id,
+                "profile": None,
+                "skill_states": {},
+                "streak": 0,
+                "last_login": datetime.datetime.utcnow().isoformat()
+            }
+            db["users"].append(user)
+
+        # Update streak
+        try:
+            last = datetime.datetime.fromisoformat(user["last_login"])
+            days = (datetime.datetime.utcnow() - last).days
+            if days == 1:
+                user["streak"] = user.get("streak", 0) + 1
+            elif days > 1:
+                user["streak"] = 1
+        except Exception:
+            pass
+        user["last_login"] = datetime.datetime.utcnow().isoformat()
+
+        token = make_token(user["id"], email)
+        return jsonify({"token": token, "user": user_public(user)})
+
+    except ValueError as e:
+        return jsonify({"error": "Invalid Google token: " + str(e)}), 401
+    except Exception as e:
+        return jsonify({"error": "Google login failed: " + str(e)}), 500
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @app.route("/api/user/me", methods=["GET"])
@@ -892,18 +1217,27 @@ def get_courses():
             gaps = compute_skill_gaps(scored[0], profile, skill_states)
             needed_skills = [g["name"] for g in gaps["need"]]
     all_courses = [
-        {"provider": "NIELIT / NSDC",       "name": "Data Analytics Fundamentals",    "nsqf": "NSQF Level 4", "dur": "8 weeks",  "free": True,  "skills": ["SQL", "Data Analysis", "Statistics"]},
-        {"provider": "NPTEL (IIT)",          "name": "Python for Data Science",         "nsqf": "NSQF Level 5", "dur": "12 weeks", "free": True,  "skills": ["Python Advanced", "Basic Python", "Data Preprocessing"]},
-        {"provider": "Skill India Portal",   "name": "SQL and Database Basics",         "nsqf": "NSQF Level 4", "dur": "4 weeks",  "free": True,  "skills": ["SQL", "SQL and Databases"]},
-        {"provider": "Microsoft x NSDC",     "name": "Power BI Data Visualisation",     "nsqf": "NSQF Level 5", "dur": "6 weeks",  "free": False, "skills": ["Power BI", "Data Visualization"]},
-        {"provider": "Google (Coursera)",    "name": "Data Analytics Certificate",      "nsqf": "NSQF Level 5", "dur": "6 months", "free": False, "skills": ["Data Analysis", "Statistics", "SQL"]},
-        {"provider": "NASSCOM FutureSkills", "name": "Machine Learning Essentials",     "nsqf": "NSQF Level 6", "dur": "10 weeks", "free": False, "skills": ["Machine Learning", "Statistics and Math"]},
-        {"provider": "Swayam (GOI)",         "name": "Introduction to Big Data",        "nsqf": "NSQF Level 5", "dur": "8 weeks",  "free": True,  "skills": ["Apache Spark", "ETL Pipelines", "Cloud Platforms"]},
-        {"provider": "Internshala Training", "name": "Data Visualization with Tableau", "nsqf": "NSQF Level 4", "dur": "5 weeks",  "free": False, "skills": ["Tableau", "Data Visualization"]},
-        {"provider": "Google Digital Garage","name": "Digital Marketing Fundamentals",  "nsqf": "NSQF Level 3", "dur": "6 weeks",  "free": True,  "skills": ["Google Analytics", "SEO and SEM"]},
-        {"provider": "AWS Training",         "name": "AWS Cloud Practitioner",          "nsqf": "NSQF Level 5", "dur": "8 weeks",  "free": False, "skills": ["AWS Azure GCP", "Cloud Platforms"]},
-        {"provider": "ISTQB",               "name": "Software Testing Foundation",      "nsqf": "NSQF Level 4", "dur": "6 weeks",  "free": False, "skills": ["Manual Testing", "JIRA Bug Tracking"]},
-        {"provider": "Coursera (IBM)",       "name": "Business Intelligence Reporting", "nsqf": "NSQF Level 5", "dur": "8 weeks",  "free": False, "skills": ["Power BI", "DAX / M Language", "Data Modeling"]}
+        {"provider": "NIELIT / NSDC",        "name": "Data Analytics Fundamentals",      "nsqf": "NSQF Level 4", "dur": "8 weeks",  "free": True,  "skills": ["SQL", "Data Analysis", "Statistics"]},
+        {"provider": "NPTEL (IIT)",           "name": "Python for Data Science",           "nsqf": "NSQF Level 5", "dur": "12 weeks", "free": True,  "skills": ["Python Advanced", "Basic Python", "Data Preprocessing"]},
+        {"provider": "Skill India Portal",    "name": "SQL and Database Basics",           "nsqf": "NSQF Level 4", "dur": "4 weeks",  "free": True,  "skills": ["SQL", "SQL and Databases"]},
+        {"provider": "Microsoft x NSDC",      "name": "Power BI Data Visualisation",       "nsqf": "NSQF Level 5", "dur": "6 weeks",  "free": False, "skills": ["Power BI", "Data Visualization"]},
+        {"provider": "Google (Coursera)",     "name": "Data Analytics Certificate",        "nsqf": "NSQF Level 5", "dur": "6 months", "free": False, "skills": ["Data Analysis", "Statistics", "SQL"]},
+        {"provider": "NASSCOM FutureSkills",  "name": "Machine Learning Essentials",       "nsqf": "NSQF Level 6", "dur": "10 weeks", "free": False, "skills": ["Machine Learning", "Statistics and Math"]},
+        {"provider": "Swayam (GOI)",          "name": "Introduction to Big Data",          "nsqf": "NSQF Level 5", "dur": "8 weeks",  "free": True,  "skills": ["Apache Spark", "ETL Pipelines", "Cloud Platforms"]},
+        {"provider": "Internshala Training",  "name": "Data Visualization with Tableau",   "nsqf": "NSQF Level 4", "dur": "5 weeks",  "free": False, "skills": ["Tableau", "Data Visualization"]},
+        {"provider": "Google Digital Garage", "name": "Digital Marketing Fundamentals",    "nsqf": "NSQF Level 3", "dur": "6 weeks",  "free": True,  "skills": ["Google Analytics", "SEO and SEM"]},
+        {"provider": "AWS Training",          "name": "AWS Cloud Practitioner",            "nsqf": "NSQF Level 5", "dur": "8 weeks",  "free": False, "skills": ["AWS Azure GCP", "Cloud Platforms"]},
+        {"provider": "ISTQB",                 "name": "Software Testing Foundation",       "nsqf": "NSQF Level 4", "dur": "6 weeks",  "free": False, "skills": ["Manual Testing", "JIRA Bug Tracking"]},
+        {"provider": "Coursera (IBM)",        "name": "Business Intelligence Reporting",   "nsqf": "NSQF Level 5", "dur": "8 weeks",  "free": False, "skills": ["Power BI", "DAX / M Language", "Data Modeling"]},
+        # NEW medical courses
+        {"provider": "Coursera (Johns Hopkins)","name": "Health Informatics Specialization","nsqf": "NSQF Level 5", "dur": "4 months", "free": False, "skills": ["HL7 and FHIR Standards", "EHR EMR Systems", "Healthcare Data Systems"]},
+        {"provider": "NPTEL (IIT Kharagpur)", "name": "Medical Informatics",               "nsqf": "NSQF Level 5", "dur": "8 weeks",  "free": True,  "skills": ["HMIS EHR Systems", "Healthcare Data Systems", "ICD-10 Medical Coding"]},
+        {"provider": "edX (MIT)",             "name": "Computational Biology",             "nsqf": "NSQF Level 6", "dur": "12 weeks", "free": False, "skills": ["Bioinformatics Genomics", "Python and R Programming", "Statistical Modeling"]},
+        {"provider": "Coursera (Duke Univ)",  "name": "Clinical Data Science",             "nsqf": "NSQF Level 6", "dur": "5 months", "free": False, "skills": ["CDISC Standards SDTM ADaM", "SAS Programming", "Clinical Trial Protocols"]},
+        {"provider": "Swayam (GOI)",          "name": "Biomedical Signal Processing",      "nsqf": "NSQF Level 5", "dur": "10 weeks", "free": True,  "skills": ["Signal Processing", "C and C++ Programming", "Embedded Systems RTOS"]},
+        {"provider": "NASSCOM FutureSkills",  "name": "AI in Healthcare",                  "nsqf": "NSQF Level 6", "dur": "8 weeks",  "free": False, "skills": ["Deep Learning CNN", "DICOM Medical Imaging", "Medical Image Datasets"]},
+        {"provider": "Coursera (Stanford)",   "name": "AI in Medicine Specialization",     "nsqf": "NSQF Level 7", "dur": "6 months", "free": False, "skills": ["ML for Drug Discovery", "Clinical Data Interpretation", "Model Validation FDA"]},
+        {"provider": "Skill India Portal",    "name": "Digital Health and Telemedicine",   "nsqf": "NSQF Level 5", "dur": "6 weeks",  "free": True,  "skills": ["Healthcare API FHIR", "Data Security HIPAA", "IoT Device Integration"]}
     ]
 
     def course_relevance(course):
@@ -935,17 +1269,37 @@ def get_tip():
         "80 percent of Data Analyst job descriptions now require at least basic Python knowledge.",
         "NCVET apprenticeships offer stipends up to 15000 per month while you learn.",
         "Soft skills like communication add up to 30 percent weight in data role interviews.",
-        "Adding a Kaggle profile with 2 to 3 projects can double your shortlisting rate."
+        "Adding a Kaggle profile with 2 to 3 projects can double your shortlisting rate.",
+        # NEW medical tips
+        "HL7 FHIR is the most in-demand standard in Health IT - learning it adds 2 to 3 LPA.",
+        "AI in Medical Imaging is growing 48 percent per year - fastest healthcare tech role.",
+        "Clinical Data Engineers with SAS certification earn 25 percent more than uncertified peers.",
+        "Telemedicine platform developers are among the top 10 highest-paid healthtech roles in India.",
+        "Biomedical AI research roles at AIIMS and IITs offer stipends of Rs.50000 to Rs.80000 per month."
     ]
     if user and user.get("profile"):
         skills = user["profile"].get("skills", {})
+        field = user["profile"].get("field", "")
         if skills.get("prog", 0) < 50:
             tips.insert(0, "Your programming score is low - focus on Python basics to unlock higher-paying roles.")
         if skills.get("data", 0) < 50:
             tips.insert(0, "Boosting your data analysis skills could raise your match score by 15 points.")
         if skills.get("comm", 0) > 70:
             tips.insert(0, "Your strong communication skills are great - consider Product Analyst roles.")
-    return jsonify({"tip": random.choice(tips[:5])})
+        # Medical field specific tips
+        if field == "medical":
+            tips.insert(0, "Your medical background is a unique advantage - Health Informatics and Clinical Data roles value domain knowledge highly.")
+    return jsonify({"tip": random.choice(tips[:6])})
+
+
+# ── NEW: endpoint to get valid graduation years ───────────────────────────────
+@app.route("/api/config/years", methods=["GET"])
+def get_valid_years():
+    """Returns list of valid graduation years from 2015 to 2030."""
+    current_year = datetime.datetime.utcnow().year
+    years = list(range(2015, 2031))   # 2015 → 2030 inclusive
+    return jsonify({"years": years, "current_year": current_year})
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 @app.route("/api/health", methods=["GET"])
@@ -956,9 +1310,11 @@ def health():
 if __name__ == "__main__":
     print("")
     print("PathForge Smart Python Backend")
-    print("=" * 40)
-    print("Running on: http://localhost:3001")
-    print("Demo login: priya@example.com / password")
-    print("=" * 40)
+    print("=" * 50)
+    print("Running on  : http://localhost:3001")
+    print("Demo login  : priya@example.com / password")
+    print("Google Auth : Set GOOGLE_CLIENT_ID before using")
+    print("New features: Google Sign-In, Medical Careers (13-18), Years up to 2030")
+    print("=" * 50)
     print("")
     app.run(port=3001, debug=True)
